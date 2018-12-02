@@ -230,6 +230,9 @@ cdef void blit(GLuint tex, float x, float y, float w, float h):
                   1.0, 1.0,
                   ]
 
+    glEnable(GL_BLEND)
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     glUseProgram(blitProgram)
 
     glActiveTexture(GL_TEXTURE0)
@@ -250,7 +253,7 @@ def draw():
     glClear(GL_COLOR_BUFFER_BIT)
 
     glViewport(0, 0, 800, 800)
-    blit(logoTex, 0, 0, 100, 100)
 
+    blit(logoTex, 0, 0, 100, 100)
     blit(logoTex, 100, 50, 234, 360)
 

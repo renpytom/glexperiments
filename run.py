@@ -17,6 +17,7 @@ def main():
     pygame_sdl2.init()
     pygame_sdl2.display.set_mode((800, 800), pygame_sdl2.OPENGL)
     uguu.load()
+    uguu.enable_check_error()
 
     init = getattr(m, "init", None)
     if init is not None:

@@ -76,25 +76,22 @@ cdef GLuint load_shader(GLenum shader_type, source):
 
     return shader
 
-cdef GLuint program
+cdef GLuint blitProgram
 
 cdef GLuint uTransform
 cdef GLuint aPosition
 cdef GLuint aTexCoord
 cdef GLuint uTex0
 
-cdef GLuint tex
+cdef GLuint logoTex
 
-def load_texture(fn):
+cdef GLuint load_texture(fn):
     """
     Loads a texture.
     """
 
     surf = pygame_sdl2.image.load(fn)
     surf = surf.convert_alpha(sample_alpha)
-
-    print(surf.get_masks())
-
 
     cdef SDL_Surface *s
     s = PySurface_AsSurface(surf)
@@ -113,6 +110,8 @@ def load_texture(fn):
         pixels += s.pitch
         p += (s.w * 4)
 
+    cdef GLuint tex
+
     glGenTextures(1, &tex)
 
     glBindTexture(GL_TEXTURE_2D, tex)
@@ -125,6 +124,8 @@ def load_texture(fn):
     glGenerateMipmap(GL_TEXTURE_2D)
 
     free(data)
+
+    return tex
 
 def set_rgba_masks():
     """
@@ -159,7 +160,7 @@ def init():
 
     set_rgba_masks()
 
-    global program
+    global blitProgram
     global uTransform
     global aPosition
     global aTexCoord
@@ -174,64 +175,62 @@ def init():
     vertex = load_shader(GL_VERTEX_SHADER, VERTEX_SHADER)
     fragment = load_shader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
 
-    program = glCreateProgram()
-    glAttachShader(program, vertex)
-    glAttachShader(program, fragment)
-    glLinkProgram(program)
+    blitProgram = glCreateProgram()
+    glAttachShader(blitProgram, vertex)
+    glAttachShader(blitProgram, fragment)
+    glLinkProgram(blitProgram)
 
-    glGetProgramiv(program, GL_LINK_STATUS, &status)
+    glGetProgramiv(blitProgram, GL_LINK_STATUS, &status)
 
     if status == GL_FALSE:
-        glGetProgramInfoLog(program, 1024, NULL, error)
+        glGetProgramInfoLog(blitProgram, 1024, NULL, error)
         raise ShaderError((<object> error).decode("utf-8"))
 
     glDeleteShader(vertex)
     glDeleteShader(fragment)
 
-    uTransform = glGetUniformLocation(program, "uTransform")
-    aPosition = glGetAttribLocation(program, "aPosition")
-    aTexCoord = glGetAttribLocation(program, "aTexCoord")
-    uTex0 = glGetUniformLocation(program, "uTex0")
+    uTransform = glGetUniformLocation(blitProgram, "uTransform")
+    aPosition = glGetAttribLocation(blitProgram, "aPosition")
+    aTexCoord = glGetAttribLocation(blitProgram, "aTexCoord")
+    uTex0 = glGetUniformLocation(blitProgram, "uTex0")
 
-    load_texture("logo base.png")
+    global logoTex
 
-    print(uTransform)
+    logoTex = load_texture("logo base.png")
 
 
-def draw():
-    glClearColor(0.5, 0.0, 0.0, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT)
 
-    glViewport(0, 0, 800, 800)
+cdef void blit(GLuint tex, float x, float y, float w, float h):
+    cdef float x1 = x + w
+    cdef float y1 = y + h
+
 
     cdef float transform[16]
 
     transform[:] = [
         1.0 / 400.0, 0.0, 0.0, -1.0,
-        0.0, 1.0 / 400.0, 0.0, -1.0,
+        0.0, -1.0 / 400.0, 0.0, 1.0,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
     ]
 
     cdef float positions[16]
     positions[:] =  [
-        0, 0, 0.0, 1.0,
-        800, 0, 0.0, 1.0,
-        0, 800, 0.0, 1.0,
-        800, 800, 0.0, 1.0,
+        x, y, 0.0, 1.0,
+        x1, y, 0.0, 1.0,
+        x, y1, 0.0, 1.0,
+        x1, y1, 0.0, 1.0,
         ]
 
     cdef float texture_coordinates[8]
     texture_coordinates[:] = [
-                  0.0, 1.0,
-                  1.0, 1.0,
                   0.0, 0.0,
                   1.0, 0.0,
+                  0.0, 1.0,
+                  1.0, 1.0,
                   ]
 
-
-
-    glUseProgram(program)
+    glUseProgram(blitProgram)
 
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, tex)
@@ -243,3 +242,15 @@ def draw():
     glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 0, texture_coordinates)
     glEnableVertexAttribArray(aTexCoord)
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+
+
+
+def draw():
+    glClearColor(0.5, 0.0, 0.0, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT)
+
+    glViewport(0, 0, 800, 800)
+    blit(logoTex, 0, 0, 100, 100)
+
+    blit(logoTex, 100, 50, 234, 360)
+

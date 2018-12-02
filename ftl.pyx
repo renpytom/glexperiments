@@ -84,6 +84,7 @@ cdef GLuint aTexCoord
 cdef GLuint uTex0
 
 cdef GLuint logoTex
+cdef GLuint blueTex
 
 cdef GLuint load_texture(fn):
     """
@@ -195,9 +196,10 @@ def init():
     uTex0 = glGetUniformLocation(blitProgram, "uTex0")
 
     global logoTex
+    global blueTex
 
     logoTex = load_texture("logo base.png")
-
+    blueTex = load_texture("blue.png")
 
 
 cdef void blit(GLuint tex, float x, float y, float w, float h):
@@ -249,11 +251,14 @@ cdef void blit(GLuint tex, float x, float y, float w, float h):
 
 
 def draw():
-    glClearColor(0.5, 0.0, 0.0, 1.0)
+    glClearColor(0.5, 0.5, 0.5, 1.0)
     glClear(GL_COLOR_BUFFER_BIT)
 
     glViewport(0, 0, 800, 800)
 
-    blit(logoTex, 0, 0, 100, 100)
-    blit(logoTex, 100, 50, 234, 360)
+    blit(logoTex, 0, 0, 234/2, 360/2)
+    blit(logoTex, 234/2, 0, 234, 360)
 
+
+    blit(blueTex, 0, 0, 234/2, 360/2)
+    blit(blueTex, 234/2, 0, 234, 360)

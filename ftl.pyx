@@ -14,6 +14,8 @@ from pygame_sdl2 cimport *
 import pygame_sdl2
 import_pygame_sdl2()
 
+from shaders cimport Program
+
 cdef int root_fbo
 cdef int texture_fbo
 
@@ -162,38 +164,24 @@ def init():
     set_rgba_masks()
 
     global blitProgram
+
+    cdef Program p
+    p = Program(VERTEX_SHADER, FRAGMENT_SHADER)
+    p.load()
+
+    blitProgram = p.program
+
     global uTransform
     global aPosition
     global aTexCoord
     global uTex0
 
-    cdef GLuint vertex
-    cdef GLuint fragment
-    cdef GLint status
-
-    cdef char error[1024]
-
-    vertex = load_shader(GL_VERTEX_SHADER, VERTEX_SHADER)
-    fragment = load_shader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER)
-
-    blitProgram = glCreateProgram()
-    glAttachShader(blitProgram, vertex)
-    glAttachShader(blitProgram, fragment)
-    glLinkProgram(blitProgram)
-
-    glGetProgramiv(blitProgram, GL_LINK_STATUS, &status)
-
-    if status == GL_FALSE:
-        glGetProgramInfoLog(blitProgram, 1024, NULL, error)
-        raise ShaderError((<object> error).decode("utf-8"))
-
-    glDeleteShader(vertex)
-    glDeleteShader(fragment)
-
     uTransform = glGetUniformLocation(blitProgram, "uTransform")
     aPosition = glGetAttribLocation(blitProgram, "aPosition")
     aTexCoord = glGetAttribLocation(blitProgram, "aTexCoord")
     uTex0 = glGetUniformLocation(blitProgram, "uTex0")
+
+    print(blitProgram, uTransform, aTexCoord, uTex0)
 
     global logoTex
     global blueTex

@@ -24,6 +24,7 @@ setup(
     ext_modules=cythonize([
         extension("uguugl"),
         extension("uguu"),
+        extension("shaders"),
         extension("ftl"),
         ],
         include_path=[ ".." ])

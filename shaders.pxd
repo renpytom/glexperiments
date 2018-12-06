@@ -1,6 +1,13 @@
 from uguugl cimport *
 
-cdef class Program(object):
+cdef class ShaderData:
+
+    cdef GLfloat *data
+    cdef GLuint length
+
+
+
+cdef class Program:
 
     # The number of the OpenGL program created.
     cdef GLuint program

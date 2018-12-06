@@ -1,4 +1,6 @@
 from uguugl cimport *
+from libc.stdlib cimport malloc, free
+
 
 class ShaderError(Exception):
     pass
@@ -16,8 +18,17 @@ GLSL_TYPES = {
     "sampler2D"
     }
 
+cdef class ShaderData:
 
-cdef class Program(object):
+    def __init__(self, int length):
+        self.length = length
+        self.data = <GLfloat *> malloc(sizeof(GLfloat) * length)
+
+    def __dealloc__(self):
+        free(self.data)
+
+
+cdef class Program:
     """
     Represents an OpenGL program.
     """
@@ -77,11 +88,9 @@ cdef class Program(object):
             name = advance()
             if name is None:
                 raise ShaderError("Couldn't finds name in {}".format(l))
-                continue
 
             if tokens:
                 raise ShaderError("Spurious tokens after the name in '{}'. Arrays are not supported in Ren'Py.".format(l))
-                continue
 
             self.type[name] = type
 
@@ -101,7 +110,6 @@ cdef class Program(object):
         cdef GLint status
 
         cdef char error[1024]
-
 
         shader = glCreateShader(shader_type)
         length = len(source)

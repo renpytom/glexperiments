@@ -27,6 +27,15 @@ cdef class ShaderData:
     def __dealloc__(self):
         free(self.data)
 
+def shader_data(list l):
+    cdef ShaderData sd = ShaderData(len(l))
+    cdef GLfloat *p = sd.data
+
+    for f in l:
+        p[0] = <float> f
+        p += 1
+
+    return sd
 
 cdef class Program:
     """

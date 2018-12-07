@@ -5,19 +5,6 @@ from libc.stdlib cimport malloc, free
 class ShaderError(Exception):
     pass
 
-GLSL_PRECISIONS = {
-    "highp",
-    "mediump",
-    "lowp",
-    }
-
-GLSL_TYPES = {
-    "float",
-    "vec2", "vec3", "vec4",
-    "mat2", "mat3", "mat4",
-    "sampler2D"
-    }
-
 cdef class ShaderData:
 
     def __init__(self, int length):
@@ -37,6 +24,75 @@ def shader_data(list l):
 
     return sd
 
+
+
+GLSL_PRECISIONS = {
+    "highp",
+    "mediump",
+    "lowp",
+    }
+
+
+
+def uniform_float(uniform, float data):
+    glUniform1f(uniform, data)
+
+def uniform_vec2(uniform, ShaderData data):
+    glUniform2fv(uniform, 1, data.data)
+
+def uniform_vec3(uniform, ShaderData data):
+    glUniform3fv(uniform, 1, data.data)
+
+def uniform_vec4(uniform, ShaderData data):
+    glUniform4fv(uniform, 1, data.data)
+
+def uniform_mat2(uniform, ShaderData data):
+    glUniformMatrix2fv(uniform, 1, GL_FALSE, data.data)
+
+def uniform_mat3(uniform, ShaderData data):
+    glUniformMatrix3fv(uniform, 1, GL_FALSE, data.data)
+
+def uniform_mat4(uniform, ShaderData data):
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, data.data)
+
+def uniform_sampler2d(uniform, int data):
+    glUniform1i(uniform, data)
+
+UNIFORM_TYPES = {
+    "float" : uniform_float,
+    "vec2" : uniform_vec2,
+    "vec3" : uniform_vec3,
+    "vec4" : uniform_vec4,
+    "mat2" : uniform_mat2,
+    "mat3" : uniform_mat3,
+    "mat4" : uniform_mat4,
+    "sampler2D" : uniform_sampler2d,
+    }
+
+def attribute_float(attribute, ShaderData data):
+    glVertexAttribPointer(attribute, 1, GL_FLOAT, GL_FALSE, 0, data.data)
+    glEnableVertexAttribArray(attribute)
+
+def attribute_vec2(attribute, ShaderData data):
+    glVertexAttribPointer(attribute, 2, GL_FLOAT, GL_FALSE, 0, data.data)
+    glEnableVertexAttribArray(attribute)
+
+def attribute_vec3(attribute, ShaderData data):
+    glVertexAttribPointer(attribute, 3, GL_FLOAT, GL_FALSE, 0, data.data)
+    glEnableVertexAttribArray(attribute)
+
+def attribute_vec4(attribute, ShaderData data):
+    glVertexAttribPointer(attribute, 4, GL_FLOAT, GL_FALSE, 0, data.data)
+    glEnableVertexAttribArray(attribute)
+
+ATTRIBUTE_TYPES = {
+    "float" : attribute_float,
+    "vec2" : attribute_vec2,
+    "vec3" : attribute_vec3,
+    "vec4" : attribute_vec4,
+}
+
+
 cdef class Program:
     """
     Represents an OpenGL program.
@@ -46,16 +102,8 @@ cdef class Program:
         self.vertex = vertex
         self.fragment = fragment
 
-        # A map from attribute or uniform name to its type.
-        self.type = { }
-
-        # A map from a uniform to its number.
-        self.uniform = { }
-
-        # A map from an attribute to its number.
-        self.attribute = { }
-
-
+        # A map from attribute/uniform name to (location, data function).
+        self.variables = { }
 
     def find_variables(self, source):
 
@@ -78,8 +126,10 @@ cdef class Program:
 
             if token == "uniform":
                 storage = "uniform"
+                types = UNIFORM_TYPES
             elif token == "attribute":
                 storage = "attribute"
+                types = ATTRIBUTE_TYPES
             else:
                 continue
 
@@ -89,7 +139,7 @@ cdef class Program:
                 token = advance()
                 continue
 
-            if token not in GLSL_TYPES:
+            if token not in types:
                 raise ShaderError("Unsupported type {} in '{}'. Only float, vec<2-4>, mat<2-4>, and sampler2D are supported.".format(token, l))
 
             type = token
@@ -101,12 +151,14 @@ cdef class Program:
             if tokens:
                 raise ShaderError("Spurious tokens after the name in '{}'. Arrays are not supported in Ren'Py.".format(l))
 
-            self.type[name] = type
-
             if storage == "uniform":
-                self.uniform[name] = glGetUniformLocation(self.program, name)
+                location = glGetUniformLocation(self.program, name)
             else:
-                self.attribute[name] = glGetAttribLocation(self.program, name)
+                location = glGetAttribLocation(self.program, name)
+
+            data_function = types[type]
+            self.variables[name] = (location, data_function)
+
 
     cdef GLuint load_shader(self, GLenum shader_type, source) except? 0:
         """
@@ -167,5 +219,3 @@ cdef class Program:
 
         self.find_variables(self.vertex)
         self.find_variables(self.fragment)
-
-

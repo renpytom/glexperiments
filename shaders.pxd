@@ -14,8 +14,6 @@ cdef class Program:
     cdef object vertex
     cdef object fragment
 
-    cdef dict type
-    cdef dict attribute
-    cdef dict uniform
+    cdef dict variables
 
     cdef GLuint load_shader(self, GLenum shader_type, source) except? 0

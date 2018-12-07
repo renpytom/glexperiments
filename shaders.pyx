@@ -34,28 +34,34 @@ GLSL_PRECISIONS = {
 
 
 
-def uniform_float(uniform, float data):
+def uniform_float(uniform, data):
     glUniform1f(uniform, data)
 
-def uniform_vec2(uniform, ShaderData data):
-    glUniform2fv(uniform, 1, data.data)
+def uniform_vec2(uniform, data):
+    a, b = data
+    glUniform2f(uniform, a, b)
 
-def uniform_vec3(uniform, ShaderData data):
-    glUniform3fv(uniform, 1, data.data)
+def uniform_vec3(uniform, data):
+    a, b, c = data
+    glUniform3f(uniform, a, b, c)
 
-def uniform_vec4(uniform, ShaderData data):
-    glUniform4fv(uniform, 1, data.data)
+def uniform_vec4(uniform, data):
+    a, b, c, d = data
+    glUniform4f(uniform, a, b, c, d)
 
-def uniform_mat2(uniform, ShaderData data):
-    glUniformMatrix2fv(uniform, 1, GL_FALSE, data.data)
+def uniform_mat2(uniform, data):
+    cdef ShaderData sd = shader_data(data)
+    glUniformMatrix2fv(uniform, 1, GL_FALSE, sd.data)
 
-def uniform_mat3(uniform, ShaderData data):
-    glUniformMatrix3fv(uniform, 1, GL_FALSE, data.data)
+def uniform_mat3(uniform, data):
+    cdef ShaderData sd = shader_data(data)
+    glUniformMatrix3fv(uniform, 1, GL_FALSE, sd.data)
 
-def uniform_mat4(uniform, ShaderData data):
-    glUniformMatrix4fv(uniform, 1, GL_FALSE, data.data)
+def uniform_mat4(uniform, data):
+    cdef ShaderData sd = shader_data(data)
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, sd.data)
 
-def uniform_sampler2d(uniform, int data):
+def uniform_sampler2d(uniform, data):
     glUniform1i(uniform, data)
 
 UNIFORM_TYPES = {
@@ -102,8 +108,8 @@ cdef class Program:
         self.vertex = vertex
         self.fragment = fragment
 
-        # A map from attribute/uniform name to (location, data function).
-        self.variables = { }
+        # A list of (name, location, data_function) tuples.
+        self.variables = [ ]
 
     def find_variables(self, source):
 
@@ -157,7 +163,7 @@ cdef class Program:
                 location = glGetAttribLocation(self.program, name)
 
             data_function = types[type]
-            self.variables[name] = (location, data_function)
+            self.variables.append((name, location, data_function))
 
 
     cdef GLuint load_shader(self, GLenum shader_type, source) except? 0:
@@ -219,3 +225,12 @@ cdef class Program:
 
         self.find_variables(self.vertex)
         self.find_variables(self.fragment)
+
+    def setup(self, **kwargs):
+        glUseProgram(self.program)
+
+        for name, attribute, data_function in self.variables:
+            data_function(attribute, kwargs[name])
+
+    def draw(self, mode, start, count):
+        glDrawArrays(mode, start, count)

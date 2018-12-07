@@ -15,6 +15,7 @@ import pygame_sdl2
 import_pygame_sdl2()
 
 from shaders cimport Program
+from shaders import shader_data
 
 cdef int root_fbo
 cdef int texture_fbo
@@ -77,13 +78,6 @@ cdef GLuint load_shader(GLenum shader_type, source):
         raise ShaderError((<object> error).decode("utf-8"))
 
     return shader
-
-cdef GLuint blitProgram
-
-cdef GLuint uTransform
-cdef GLuint aPosition
-cdef GLuint aTexCoord
-cdef GLuint uTex0
 
 cdef GLuint logoTex
 cdef GLuint blueTex
@@ -163,25 +157,9 @@ def init():
 
     set_rgba_masks()
 
-    global blitProgram
-
-    cdef Program p
-    p = Program(VERTEX_SHADER, FRAGMENT_SHADER)
-    p.load()
-
-    blitProgram = p.program
-
-    global uTransform
-    global aPosition
-    global aTexCoord
-    global uTex0
-
-    uTransform = glGetUniformLocation(blitProgram, "uTransform")
-    aPosition = glGetAttribLocation(blitProgram, "aPosition")
-    aTexCoord = glGetAttribLocation(blitProgram, "aTexCoord")
-    uTex0 = glGetUniformLocation(blitProgram, "uTex0")
-
-    print(blitProgram, uTransform, aTexCoord, uTex0)
+    global program
+    program = Program(VERTEX_SHADER, FRAGMENT_SHADER)
+    program.load()
 
     global logoTex
     global blueTex
@@ -189,52 +167,44 @@ def init():
     logoTex = load_texture("logo base.png")
     blueTex = load_texture("blue.png")
 
+def blit(tex, x, y, w, h):
+    x1 = x + w
+    y1 = y + h
 
-cdef void blit(GLuint tex, float x, float y, float w, float h):
-    cdef float x1 = x + w
-    cdef float y1 = y + h
-
-
-    cdef float transform[16]
-
-    transform[:] = [
+    transform = [
         1.0 / 400.0, 0.0, 0.0, -1.0,
         0.0, -1.0 / 400.0, 0.0, 1.0,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
     ]
 
-    cdef float positions[16]
-    positions[:] =  [
+    positions = shader_data([
         x, y, 0.0, 1.0,
         x1, y, 0.0, 1.0,
         x, y1, 0.0, 1.0,
         x1, y1, 0.0, 1.0,
-        ]
+        ])
 
-    cdef float texture_coordinates[8]
-    texture_coordinates[:] = [
+    texture_coordinates=shader_data([
                   0.0, 0.0,
                   1.0, 0.0,
                   0.0, 1.0,
                   1.0, 1.0,
-                  ]
+                  ])
 
     glEnable(GL_BLEND)
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    glUseProgram(blitProgram)
-
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, tex)
-    glUniform1i(uTex0, 0)
 
-    glUniformMatrix4fv(uTransform, 1, GL_FALSE, transform)
-    glVertexAttribPointer(aPosition, 4, GL_FLOAT, GL_FALSE, 0, positions)
-    glEnableVertexAttribArray(aPosition)
-    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, 0, texture_coordinates)
-    glEnableVertexAttribArray(aTexCoord)
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
+    program.setup(
+        uTransform=transform,
+        uTex0=0,
+        aPosition=positions,
+        aTexCoord=texture_coordinates)
+
+    program.draw(GL_TRIANGLE_STRIP, 0, 4)
 
 
 

@@ -56,14 +56,14 @@ FTL_VERTEX_SHADER = b"""\
 precision highp float;
 #endif
 
-attribute vec4 aPosition;
+attribute vec2 aPosition;
 attribute vec2 aTexCoord;
 
 varying vec2 vTexCoord;
 
 void main() {
     vTexCoord = aTexCoord;
-    gl_Position = aPosition;
+    gl_Position = vec4(aPosition, 0.0, 1.0);
 }
 """
 
@@ -172,10 +172,24 @@ cdef GLuint load_texture(fn):
         0)
 
     glViewport(0, 0, s.w, s.h)
-    glClearColor(0, 255, 0, 255)
+    glClearColor(0, 0, 0, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
+    aPosition = shader_data([
+        -1.0, -1.0,
+        -1.0, 1.0,
+        1.0, 1.0,
+        1.0, -1.0,
+        ])
 
+    aTexCoord = shader_data([
+        0.0, 0.0,
+        0.0, 1.0,
+        1.0, 1.0,
+        1.0, 0.0,
+        ])
+
+    glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, tex)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, s.w, s.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -183,9 +197,16 @@ cdef GLuint load_texture(fn):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
+    ftl_program.setup(aPosition=aPosition, aTexCoord=aTexCoord, uTex0=0)
+    ftl_program.draw(GL_TRIANGLE_FAN, 0, 4)
+
     glDeleteTextures(1, &tex)
 
     glBindTexture(GL_TEXTURE_2D, premultiplied)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
     glGenerateMipmap(GL_TEXTURE_2D)
 
     glBindFramebuffer(GL_FRAMEBUFFER, root_fbo)
@@ -282,7 +303,7 @@ def blit(tex, x, y, w, h):
 
 
 def draw():
-    glClearColor(0.5, 0.5, 0.5, 1.0)
+    glClearColor(0.8, 0.8, 0.8, 1.0)
     glClear(GL_COLOR_BUFFER_BIT)
 
     glViewport(0, 0, 800, 800)

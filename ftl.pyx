@@ -17,9 +17,6 @@ import_pygame_sdl2()
 from shaders cimport Program
 from shaders import shader_data
 
-cdef int root_fbo
-cdef int texture_fbo
-
 
 VERTEX_SHADER = b"""\
 #ifdef GL_ES
@@ -52,6 +49,38 @@ void main() {
 }
 """
 
+
+
+FTL_VERTEX_SHADER = b"""\
+#ifdef GL_ES
+precision highp float;
+#endif
+
+attribute vec4 aPosition;
+attribute vec2 aTexCoord;
+
+varying vec2 vTexCoord;
+
+void main() {
+    vTexCoord = aTexCoord;
+    gl_Position = aPosition;
+}
+"""
+
+FTL_FRAGMENT_SHADER = b"""\
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform sampler2D uTex0;
+varying vec2 vTexCoord;
+
+void main() {
+    gl_FragColor = texture2D(uTex0, vTexCoord.xy);
+}
+"""
+
+
 class ShaderError(Exception):
     pass
 
@@ -82,6 +111,22 @@ cdef GLuint load_shader(GLenum shader_type, source):
 cdef GLuint logoTex
 cdef GLuint blueTex
 
+cdef GLuint root_fbo
+cdef GLuint texture_fbo
+
+def init_ftl():
+
+    global ftl_program
+    ftl_program = Program(FTL_VERTEX_SHADER, FTL_FRAGMENT_SHADER)
+    ftl_program.load()
+
+    global root_fbo
+    global texture_fbo
+
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, <GLint *> &root_fbo);
+    glGenFramebuffers(1, &texture_fbo)
+
+
 cdef GLuint load_texture(fn):
     """
     Loads a texture.
@@ -111,6 +156,26 @@ cdef GLuint load_texture(fn):
 
     glGenTextures(1, &tex)
 
+    cdef GLuint premultiplied
+    glGenTextures(1, &premultiplied)
+
+    glBindTexture(GL_TEXTURE_2D, premultiplied)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, s.w, s.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL)
+
+    glBindFramebuffer(GL_FRAMEBUFFER, texture_fbo)
+
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER,
+        GL_COLOR_ATTACHMENT0,
+        GL_TEXTURE_2D,
+        premultiplied,
+        0)
+
+    glViewport(0, 0, s.w, s.h)
+    glClearColor(0, 255, 0, 255)
+    glClear(GL_COLOR_BUFFER_BIT)
+
+
     glBindTexture(GL_TEXTURE_2D, tex)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, s.w, s.h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -118,11 +183,16 @@ cdef GLuint load_texture(fn):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
+    glDeleteTextures(1, &tex)
+
+    glBindTexture(GL_TEXTURE_2D, premultiplied)
     glGenerateMipmap(GL_TEXTURE_2D)
+
+    glBindFramebuffer(GL_FRAMEBUFFER, root_fbo)
 
     free(data)
 
-    return tex
+    return premultiplied
 
 def set_rgba_masks():
     """
@@ -157,9 +227,12 @@ def init():
 
     set_rgba_masks()
 
+    init_ftl()
+
     global program
     program = Program(VERTEX_SHADER, FRAGMENT_SHADER)
     program.load()
+
 
     global logoTex
     global blueTex

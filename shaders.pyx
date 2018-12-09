@@ -3,9 +3,6 @@ from libc.stdlib cimport malloc, free
 
 from cpython.array cimport array
 
-def shader_data(l):
-    return array('f', l)
-
 class ShaderError(Exception):
     pass
 

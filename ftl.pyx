@@ -85,30 +85,6 @@ void main() {
 class ShaderError(Exception):
     pass
 
-cdef GLuint load_shader(GLenum shader_type, source):
-
-    cdef GLuint shader
-    cdef GLchar *source_ptr = <char *> source
-    cdef GLint length
-    cdef GLint status
-
-    cdef char error[1024]
-
-
-    shader = glCreateShader(shader_type)
-    length = len(source)
-
-    glShaderSource(shader, 1, <const GLchar * const *> &source_ptr, &length)
-    glCompileShader(shader)
-
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &status)
-
-    if status == GL_FALSE:
-        glGetShaderInfoLog(shader, 1024, NULL, error)
-        raise ShaderError((<object> error).decode("utf-8"))
-
-    return shader
-
 cdef GLuint logoTex
 cdef GLuint blueTex
 

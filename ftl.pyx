@@ -197,6 +197,9 @@ cdef GLuint load_texture(fn):
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
+    glEnable(GL_BLEND)
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ZERO, GL_ONE, GL_ZERO)
+
     ftl_program.setup(aPosition=aPosition, aTexCoord=aTexCoord, uTex0=0)
     ftl_program.draw(GL_TRIANGLE_FAN, 0, 4)
 
@@ -287,7 +290,7 @@ def blit(tex, x, y, w, h):
                   ])
 
     glEnable(GL_BLEND)
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, tex)

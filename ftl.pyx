@@ -15,7 +15,7 @@ import pygame_sdl2
 import_pygame_sdl2()
 
 from shaders cimport Program
-from shaders import shader_data
+from array import array
 
 
 VERTEX_SHADER = b"""\
@@ -42,10 +42,11 @@ precision highp float;
 #endif
 
 uniform sampler2D uTex0;
+uniform mat4 uColorMatrix;
 varying vec2 vTexCoord;
 
 void main() {
-    gl_FragColor = texture2D(uTex0, vTexCoord.xy);
+    gl_FragColor = texture2D(uTex0, vTexCoord.xy) * uColorMatrix;
 }
 """
 
@@ -175,14 +176,14 @@ cdef GLuint load_texture(fn):
     glClearColor(0, 0, 0, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
-    aPosition = shader_data([
+    aPosition = array('f', [
         -1.0, -1.0,
         -1.0, 1.0,
         1.0, 1.0,
         1.0, -1.0,
         ])
 
-    aTexCoord = shader_data([
+    aTexCoord = array('f', [
         0.0, 0.0,
         0.0, 1.0,
         1.0, 1.0,
@@ -268,26 +269,33 @@ def blit(tex, x, y, w, h):
     x1 = x + w
     y1 = y + h
 
-    transform = [
+    transform = array('f', [
         1.0 / 400.0, 0.0, 0.0, -1.0,
         0.0, -1.0 / 400.0, 0.0, 1.0,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
-    ]
+    ])
 
-    positions = shader_data([
+    positions = array('f', [
         x, y, 0.0, 1.0,
         x1, y, 0.0, 1.0,
         x, y1, 0.0, 1.0,
         x1, y1, 0.0, 1.0,
         ])
 
-    texture_coordinates=shader_data([
+    texture_coordinates=array('f', [
                   0.0, 0.0,
                   1.0, 0.0,
                   0.0, 1.0,
                   1.0, 1.0,
                   ])
+
+    uColorMatrix = array('f', [
+        .2126, .7152, .0722, 0.0,
+        .199844, .672288, .067868, 0.0,
+        .161576, .543552, .054872, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+        ])
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
@@ -298,6 +306,7 @@ def blit(tex, x, y, w, h):
     program.setup(
         uTransform=transform,
         uTex0=0,
+        uColorMatrix=uColorMatrix,
         aPosition=positions,
         aTexCoord=texture_coordinates)
 
@@ -315,5 +324,5 @@ def draw():
     blit(logoTex, 234/2, 0, 234, 360)
 
 
-    blit(blueTex, 0, 0, 234/2, 360/2)
-    blit(blueTex, 234/2, 0, 234, 360)
+#     blit(blueTex, 0, 0, 234/2, 360/2)
+#     blit(blueTex, 234/2, 0, 234, 360)

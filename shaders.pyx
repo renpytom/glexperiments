@@ -1,29 +1,13 @@
 from uguugl cimport *
 from libc.stdlib cimport malloc, free
 
+from cpython.array cimport array
+
+def shader_data(l):
+    return array('f', l)
 
 class ShaderError(Exception):
     pass
-
-cdef class ShaderData:
-
-    def __init__(self, int length):
-        self.length = length
-        self.data = <GLfloat *> malloc(sizeof(GLfloat) * length)
-
-    def __dealloc__(self):
-        free(self.data)
-
-def shader_data(list l):
-    cdef ShaderData sd = ShaderData(len(l))
-    cdef GLfloat *p = sd.data
-
-    for f in l:
-        p[0] = <float> f
-        p += 1
-
-    return sd
-
 
 
 GLSL_PRECISIONS = {
@@ -31,7 +15,6 @@ GLSL_PRECISIONS = {
     "mediump",
     "lowp",
     }
-
 
 
 def uniform_float(uniform, data):
@@ -49,17 +32,14 @@ def uniform_vec4(uniform, data):
     a, b, c, d = data
     glUniform4f(uniform, a, b, c, d)
 
-def uniform_mat2(uniform, data):
-    cdef ShaderData sd = shader_data(data)
-    glUniformMatrix2fv(uniform, 1, GL_FALSE, sd.data)
+def uniform_mat2(uniform, array data):
+    glUniformMatrix2fv(uniform, 1, GL_FALSE, data.data.as_floats)
 
-def uniform_mat3(uniform, data):
-    cdef ShaderData sd = shader_data(data)
-    glUniformMatrix3fv(uniform, 1, GL_FALSE, sd.data)
+def uniform_mat3(uniform, array data):
+    glUniformMatrix3fv(uniform, 1, GL_FALSE, data.data.as_floats)
 
-def uniform_mat4(uniform, data):
-    cdef ShaderData sd = shader_data(data)
-    glUniformMatrix4fv(uniform, 1, GL_FALSE, sd.data)
+def uniform_mat4(uniform, array data):
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, data.data.as_floats)
 
 def uniform_sampler2d(uniform, data):
     glUniform1i(uniform, data)
@@ -75,20 +55,20 @@ UNIFORM_TYPES = {
     "sampler2D" : uniform_sampler2d,
     }
 
-def attribute_float(attribute, ShaderData data):
-    glVertexAttribPointer(attribute, 1, GL_FLOAT, GL_FALSE, 0, data.data)
+def attribute_float(attribute, array data):
+    glVertexAttribPointer(attribute, 1, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
     glEnableVertexAttribArray(attribute)
 
-def attribute_vec2(attribute, ShaderData data):
-    glVertexAttribPointer(attribute, 2, GL_FLOAT, GL_FALSE, 0, data.data)
+def attribute_vec2(attribute, array data):
+    glVertexAttribPointer(attribute, 2, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
     glEnableVertexAttribArray(attribute)
 
-def attribute_vec3(attribute, ShaderData data):
-    glVertexAttribPointer(attribute, 3, GL_FLOAT, GL_FALSE, 0, data.data)
+def attribute_vec3(attribute, array data):
+    glVertexAttribPointer(attribute, 3, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
     glEnableVertexAttribArray(attribute)
 
-def attribute_vec4(attribute, ShaderData data):
-    glVertexAttribPointer(attribute, 4, GL_FLOAT, GL_FALSE, 0, data.data)
+def attribute_vec4(attribute, array data):
+    glVertexAttribPointer(attribute, 4, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
     glEnableVertexAttribArray(attribute)
 
 ATTRIBUTE_TYPES = {

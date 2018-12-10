@@ -1,14 +1,10 @@
 # Fast texture loading experiment.
 
-from __future__ import print_function
 
 from libc.string cimport memcpy
 from libc.stdlib cimport malloc, free
 
 from uguugl cimport *
-import uguugl
-
-from sdl2 cimport *
 
 from pygame_sdl2 cimport *
 import pygame_sdl2
@@ -16,41 +12,6 @@ import_pygame_sdl2()
 
 from shaders cimport Program
 from array import array
-
-
-VERTEX_SHADER = b"""\
-#ifdef GL_ES
-precision highp float;
-#endif
-
-uniform mat4 uTransform;
-
-attribute vec4 aPosition;
-attribute vec2 aTexCoord;
-
-varying vec2 vTexCoord;
-
-void main() {
-    vTexCoord = aTexCoord;
-    gl_Position = aPosition * uTransform;
-}
-"""
-
-FRAGMENT_SHADER = b"""\
-#ifdef GL_ES
-precision highp float;
-#endif
-
-uniform sampler2D uTex0;
-uniform mat4 uColorMatrix;
-varying vec2 vTexCoord;
-
-void main() {
-    gl_FragColor = texture2D(uTex0, vTexCoord.xy) * uColorMatrix;
-}
-"""
-
-
 
 FTL_VERTEX_SHADER = b"""\
 #ifdef GL_ES
@@ -81,17 +42,42 @@ void main() {
 }
 """
 
-
-class ShaderError(Exception):
-    pass
-
-cdef GLuint logoTex
-cdef GLuint blueTex
-
 cdef GLuint root_fbo
 cdef GLuint texture_fbo
 
+def set_rgba_masks():
+    """
+    This rebuilds the sample surfaces, to ones that use the given
+    masks.
+    """
+
+    # Annoyingly, the value for the big mask seems to vary from
+    # platform to platform. So we read it out of a surface.
+
+    global sample_alpha
+
+    # Create a sample surface.
+    s = pygame_sdl2.Surface((10, 10), 0, 32)
+    sample_alpha = s.convert_alpha()
+
+    # Sort the components by absolute value.
+    masks = list(sample_alpha.get_masks())
+    masks.sort(key=lambda a : abs(a))
+
+    # Choose the masks.
+    import sys
+    if sys.byteorder == 'big':
+        masks = ( masks[3], masks[2], masks[1], masks[0] )
+    else:
+        masks = ( masks[0], masks[1], masks[2], masks[3] )
+
+    # Create the sample surface.
+    sample_alpha = pygame_sdl2.Surface((10, 10), 0, 32, masks)
+
+
 def init_ftl():
+
+    set_rgba_masks()
 
     global ftl_program
     ftl_program = Program(FTL_VERTEX_SHADER, FTL_FRAGMENT_SHADER)
@@ -104,7 +90,7 @@ def init_ftl():
     glGenFramebuffers(1, &texture_fbo)
 
 
-cdef GLuint load_texture(fn):
+cpdef GLuint load_texture(fn):
     """
     Loads a texture.
     """
@@ -195,110 +181,4 @@ cdef GLuint load_texture(fn):
 
     return premultiplied
 
-def set_rgba_masks():
-    """
-    This rebuilds the sample surfaces, to ones that use the given
-    masks.
-    """
 
-    # Annoyingly, the value for the big mask seems to vary from
-    # platform to platform. So we read it out of a surface.
-
-    global sample_alpha
-
-    # Create a sample surface.
-    s = pygame_sdl2.Surface((10, 10), 0, 32)
-    sample_alpha = s.convert_alpha()
-
-    # Sort the components by absolute value.
-    masks = list(sample_alpha.get_masks())
-    masks.sort(key=lambda a : abs(a))
-
-    # Choose the masks.
-    import sys
-    if sys.byteorder == 'big':
-        masks = ( masks[3], masks[2], masks[1], masks[0] )
-    else:
-        masks = ( masks[0], masks[1], masks[2], masks[3] )
-
-    # Create the sample surface.
-    sample_alpha = pygame_sdl2.Surface((10, 10), 0, 32, masks)
-
-def init():
-
-    set_rgba_masks()
-
-    init_ftl()
-
-    global program
-    program = Program(VERTEX_SHADER, FRAGMENT_SHADER)
-    program.load()
-
-
-    global logoTex
-    global blueTex
-
-    logoTex = load_texture("logo base.png")
-    blueTex = load_texture("blue.png")
-
-def blit(tex, x, y, w, h):
-    x1 = x + w
-    y1 = y + h
-
-    transform = array('f', [
-        1.0 / 400.0, 0.0, 0.0, -1.0,
-        0.0, -1.0 / 400.0, 0.0, 1.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    ])
-
-    positions = array('f', [
-        x, y, 0.0, 1.0,
-        x1, y, 0.0, 1.0,
-        x, y1, 0.0, 1.0,
-        x1, y1, 0.0, 1.0,
-        ])
-
-    texture_coordinates=array('f', [
-                  0.0, 0.0,
-                  1.0, 0.0,
-                  0.0, 1.0,
-                  1.0, 1.0,
-                  ])
-
-    uColorMatrix = array('f', [
-        .2126, .7152, .0722, 0.0,
-        .199844, .672288, .067868, 0.0,
-        .161576, .543552, .054872, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-        ])
-
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
-
-    glActiveTexture(GL_TEXTURE0)
-    glBindTexture(GL_TEXTURE_2D, tex)
-
-    program.setup(
-        uTransform=transform,
-        uTex0=0,
-        uColorMatrix=uColorMatrix,
-        aPosition=positions,
-        aTexCoord=texture_coordinates)
-
-    program.draw(GL_TRIANGLE_STRIP, 0, 4)
-
-
-
-def draw():
-    glClearColor(0.8, 0.8, 0.8, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT)
-
-    glViewport(0, 0, 800, 800)
-
-    blit(logoTex, 0, 0, 234/2, 360/2)
-    blit(logoTex, 234/2, 0, 234, 360)
-
-
-#     blit(blueTex, 0, 0, 234/2, 360/2)
-#     blit(blueTex, 234/2, 0, 234, 360)

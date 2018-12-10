@@ -26,6 +26,7 @@ setup(
         extension("uguu"),
         extension("shaders"),
         extension("ftl"),
+        extension("main"),
         ],
         include_path=[ ".." ])
 )

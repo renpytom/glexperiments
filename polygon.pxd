@@ -1,6 +1,8 @@
 from cpython.array cimport array
 
 cdef class Polygon:
-    cdef array x
-    cdef array y
+    cdef array xarray
+    cdef array yarray
+    cdef float *x
+    cdef float *y
     cdef int points

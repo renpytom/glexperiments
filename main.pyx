@@ -7,8 +7,7 @@ import_pygame_sdl2()
 from array import array
 from shaders cimport Program
 from polygon cimport Polygon
-from polygon import polygon
-
+from polygon import polygon, intersect
 from uguugl cimport *
 
 import ftl
@@ -112,6 +111,10 @@ def init():
         (200, 450),
         ])
 
+    global polygon3
+    polygon3 = intersect(polygon1, polygon2)
+
+
 def blit(tex, x, y, w, h):
     x1 = x + w
     y1 = y + h
@@ -171,8 +174,8 @@ def draw_polygon(Polygon p, color):
     poly_program.setup(
         uTransform=transform,
         uColor=color,
-        aX=p.x,
-        aY=p.y,
+        aX=p.xarray,
+        aY=p.yarray,
         )
 
     poly_program.draw(GL_TRIANGLE_FAN, 0, p.points)
@@ -191,4 +194,5 @@ def draw():
 
     draw_polygon(polygon1, [0.5, 0.0, 0.0, 1.0])
     draw_polygon(polygon2, [0.0, 0.5, 0.0, 1.0])
+    draw_polygon(polygon3, [0.5, 0.5, 0.0, 1.0])
 

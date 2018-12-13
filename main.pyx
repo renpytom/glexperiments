@@ -6,6 +6,8 @@ import_pygame_sdl2()
 
 from array import array
 from shaders cimport Program
+from polygon cimport Polygon
+from polygon import polygon
 
 from uguugl cimport *
 
@@ -48,6 +50,35 @@ void main() {
 """
 
 
+POLYGON_VERTEX = b"""\
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform mat4 uTransform;
+
+attribute float aX;
+attribute float aY;
+
+void main() {
+    gl_Position = vec4(aX, aY, 0, 1) * uTransform;
+}
+"""
+
+POLYGON_FRAGMENT = b"""\
+#ifdef GL_ES
+precision highp float;
+#endif
+
+uniform vec4 uColor;
+
+void main() {
+    gl_FragColor = uColor;
+}
+"""
+
+
+
 def init():
 
     ftl.init_ftl()
@@ -62,6 +93,17 @@ def init():
     logoTex = ftl.load_texture("logo base.png")
     blueTex = ftl.load_texture("blue.png")
 
+    global poly_program
+    poly_program = Program(POLYGON_VERTEX, POLYGON_FRAGMENT)
+    poly_program.load()
+
+    global polygon1
+    polygon1 = polygon([
+            (200, 200),
+            (400, 200),
+            (400, 400),
+            (200, 400),
+        ])
 
 def blit(tex, x, y, w, h):
     x1 = x + w
@@ -110,6 +152,24 @@ def blit(tex, x, y, w, h):
 
     program.draw(GL_TRIANGLE_STRIP, 0, 4)
 
+def draw_polygon(Polygon p):
+
+    transform = array('f', [
+        1.0 / 400.0, 0.0, 0.0, -1.0,
+        0.0, -1.0 / 400.0, 0.0, 1.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+    ])
+
+    poly_program.setup(
+        uTransform=transform,
+        uColor=[0.5, 0.0, 0.0, 1.0],
+        aX=p.x,
+        aY=p.y,
+        )
+
+    poly_program.draw(GL_TRIANGLE_FAN, 0, p.points)
+
 
 def draw():
     glClearColor(0.8, 0.8, 0.8, 1.0)
@@ -119,7 +179,8 @@ def draw():
 
     blit(logoTex, 0, 0, 234/2, 360/2)
     blit(logoTex, 234/2, 0, 234, 360)
-
-
 #     blit(blueTex, 0, 0, 234/2, 360/2)
 #     blit(blueTex, 234/2, 0, 234, 360)
+
+    draw_polygon(polygon1)
+

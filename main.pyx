@@ -105,6 +105,13 @@ def init():
             (200, 400),
         ])
 
+    global polygon2
+    polygon2 = polygon([
+        (300, 150),
+        (400, 450),
+        (200, 450),
+        ])
+
 def blit(tex, x, y, w, h):
     x1 = x + w
     y1 = y + h
@@ -152,7 +159,7 @@ def blit(tex, x, y, w, h):
 
     program.draw(GL_TRIANGLE_STRIP, 0, 4)
 
-def draw_polygon(Polygon p):
+def draw_polygon(Polygon p, color):
 
     transform = array('f', [
         1.0 / 400.0, 0.0, 0.0, -1.0,
@@ -163,7 +170,7 @@ def draw_polygon(Polygon p):
 
     poly_program.setup(
         uTransform=transform,
-        uColor=[0.5, 0.0, 0.0, 1.0],
+        uColor=color,
         aX=p.x,
         aY=p.y,
         )
@@ -178,9 +185,10 @@ def draw():
     glViewport(0, 0, 800, 800)
 
     blit(logoTex, 0, 0, 234/2, 360/2)
-    blit(logoTex, 234/2, 0, 234, 360)
+    blit(logoTex, 800-234, 0, 234, 360)
 #     blit(blueTex, 0, 0, 234/2, 360/2)
 #     blit(blueTex, 234/2, 0, 234, 360)
 
-    draw_polygon(polygon1)
+    draw_polygon(polygon1, [0.5, 0.0, 0.0, 1.0])
+    draw_polygon(polygon2, [0.0, 0.5, 0.0, 1.0])
 

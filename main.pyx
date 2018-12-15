@@ -7,7 +7,7 @@ import_pygame_sdl2()
 from array import array
 from shaders cimport Program
 from polygon cimport Polygon
-from polygon import polygon, intersect
+from polygon import polygon, intersect, barycentric
 from uguugl cimport *
 
 import ftl
@@ -104,6 +104,9 @@ def init():
             (200, 400),
         ])
 
+    polygon1.data['s'] = array('f', [0.0, 1.0, 1.0, 0.0])
+    polygon1.data['t'] = array('f', [0.0, 0.0, 1.0, 1.0])
+
     global polygon2
     polygon2 = polygon([
         (300, 150),
@@ -113,6 +116,9 @@ def init():
 
     global polygon3
     polygon3 = intersect(polygon1, polygon2)
+    barycentric(polygon1, polygon3)
+    print(polygon3.data)
+
 
 
 def blit(tex, x, y, w, h):

@@ -23,14 +23,18 @@ precision highp float;
 
 uniform mat4 uTransform;
 
-attribute vec4 aPosition;
-attribute vec2 aTexCoord;
+attribute float x;
+attribute float y;
+attribute float z;
+
+attribute float s;
+attribute float t;
 
 varying vec2 vTexCoord;
 
 void main() {
-    vTexCoord = aTexCoord;
-    gl_Position = aPosition * uTransform;
+    vTexCoord = vec2(s, t);
+    gl_Position = vec4(x, y, z, 1.0) * uTransform;
 }
 """
 
@@ -117,13 +121,9 @@ def init():
     global polygon3
     polygon3 = intersect(polygon1, polygon2)
     barycentric(polygon1, polygon3)
-    print(polygon3.data)
 
 
-
-def blit(tex, x, y, w, h):
-    x1 = x + w
-    y1 = y + h
+def blit(tex, Polygon p):
 
     transform = array('f', [
         1.0 / 400.0, 0.0, 0.0, -1.0,
@@ -132,26 +132,35 @@ def blit(tex, x, y, w, h):
         0.0, 0.0, 0.0, 1.0,
     ])
 
-    positions = array('f', [
-        x, y, 0.0, 1.0,
-        x1, y, 0.0, 1.0,
-        x, y1, 0.0, 1.0,
-        x1, y1, 0.0, 1.0,
-        ])
-
-    texture_coordinates=array('f', [
-                  0.0, 0.0,
-                  1.0, 0.0,
-                  0.0, 1.0,
-                  1.0, 1.0,
-                  ])
-
     uColorMatrix = array('f', [
-        .2126, .7152, .0722, 0.0,
-        .199844, .672288, .067868, 0.0,
-        .161576, .543552, .054872, 0.0,
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
         ])
+
+#
+#     positions = array('f', [
+#         x, y, 0.0, 1.0,
+#         x1, y, 0.0, 1.0,
+#         x, y1, 0.0, 1.0,
+#         x1, y1, 0.0, 1.0,
+#         ])
+#
+#     texture_coordinates=array('f', [
+#                   0.0, 0.0,
+#                   1.0, 0.0,
+#                   0.0, 1.0,
+#                   1.0, 1.0,
+#                   ])
+
+#     uColorMatrix = array('f', [
+#         .2126, .7152, .0722, 0.0,
+#         .199844, .672288, .067868, 0.0,
+#         .161576, .543552, .054872, 0.0,
+#         0.0, 0.0, 0.0, 1.0,
+#         ])
+
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
@@ -163,10 +172,15 @@ def blit(tex, x, y, w, h):
         uTransform=transform,
         uTex0=0,
         uColorMatrix=uColorMatrix,
-        aPosition=positions,
-        aTexCoord=texture_coordinates)
 
-    program.draw(GL_TRIANGLE_STRIP, 0, 4)
+        x = p.xarray,
+        y = p.yarray,
+        z = p.zarray,
+        s = p.data['s'],
+        t = p.data['t'],
+        )
+
+    program.draw(GL_TRIANGLE_FAN, 0, 4)
 
 def draw_polygon(Polygon p, color):
 
@@ -193,8 +207,8 @@ def draw():
 
     glViewport(0, 0, 800, 800)
 
-    blit(logoTex, 0, 0, 234/2, 360/2)
-    blit(logoTex, 800-234, 0, 234, 360)
+#    blit(logoTex, 0, 0, 234/2, 360/2)
+#     blit(logoTex, 800-234, 0, 234, 360)
 #     blit(blueTex, 0, 0, 234/2, 360/2)
 #     blit(blueTex, 234/2, 0, 234, 360)
 
@@ -202,3 +216,4 @@ def draw():
     draw_polygon(polygon2, [0.0, 0.5, 0.0, 1.0])
     draw_polygon(polygon3, [0.5, 0.5, 0.0, 1.0])
 
+    blit(logoTex, polygon3)

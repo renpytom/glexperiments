@@ -139,8 +139,6 @@ def intersect(Polygon a, Polygon b):
         a1x = ax[i]
         a1y = ay[i]
 
-        print((a0x, a0y), "->", (a1x, a1y))
-
         rv = intersectOnce(a0x, a0y, a1x, a1y, rv)
         if rv.points < 3:
             return None
@@ -241,8 +239,6 @@ def barycentric(
                 v = (d113 * d203 - d013 * d213) / denom3
                 w = (d003 * d213 - d013 * d203) / denom3
                 u = 1.0 - v - w
-
-                print(u, v, w)
 
                 for 0 <= k < datapoints:
                     bdata[k][j] = u * adata[k][0] + v * adata[k][i-1] + w * adata[k][i]

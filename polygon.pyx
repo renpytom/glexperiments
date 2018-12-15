@@ -122,26 +122,92 @@ def intersect(Polygon a, Polygon b):
     a0x = a.x[a.points-1]
     a0y = a.y[a.points-1]
 
-    cdef Polygon even = Polygon()
-    cdef Polygon odd = Polygon()
-    cdef Polygon rv
+    cdef Polygon rv = b
 
     for 0 <= i < a.points:
         a1x = a.x[i]
         a1y = a.y[i]
 
-        if i & 1:
-            rv = odd
-        else:
-            rv = even
-
         print((a0x, a0y), "->", (a1x, a1y))
 
-        intersectOnce(a0x, a0y, a1x, a1y, b, rv)
-        b = rv
+        rv = intersectOnce(a0x, a0y, a1x, a1y, rv)
+        if rv.points < 3:
+            return None
 
         a0x = a1x
         a0y = a1y
 
-
     return rv
+
+
+cdef void barycentric(
+    int apoints,
+    float *ax, float *ay, float *adata,
+    int bpoints,
+    float *bx, float *by, float *bdata,
+    ):
+
+    cdef int i
+    cdef int j
+
+    cdef float v0x = ax[1] - ax[0]
+    cdef float v0y = ay[1] - ay[0]
+
+    cdef float v1x, v1y, v2x, v2y
+    cdef float d00, d01, d11, d20, d21
+    cdef float denom
+    cdef float u, v, w
+
+
+    for 2 <= i < apoints:
+
+        v1x = ax[i] - ax[0]
+        v1y = ay[i] - ay[0]
+
+        d00 = v0x * v0x + v0y * v0y
+        d01 = v0x * v1x + v0y * v1y
+        d11 = v1x * v1x + v1y * v1y
+
+        denom = d00 * d11 - d01 * d01
+
+        if denom:
+
+            for 0 <= j < bpoints:
+
+                v2x = bx[j] - ax[0]
+                v2y = by[j] - ax[0]
+
+                d20 = v2x * v0x + v2y * v0y
+                d21 = v2x * v1x + v2y * v1y
+
+                v = (d11 * d20 - d01 * d21) / denom
+                w = (d00 * d21 - d01 * d20) / denom
+
+                if (0.0 <= v <= 1.0) and (0.0 <= w <= 1.0):
+                    u = 1.0 - v - w
+
+                    print(u, v, w)
+
+
+        v0x = v1x
+        v0y = v1y
+
+def testb():
+    cdef float ax[3]
+    ax = [ 0.0, 100, 0.0 ]
+    cdef float ay[3]
+    ay = [ 0.0, 0.0, 100.0]
+    cdef float adata[3]
+    adata  = [ 0.0, 0.0, 0.0 ]
+
+    cdef float bx[1]
+    bx = [ 0.0 ]
+    cdef float by[1]
+    by = [ 0.0 ]
+    cdef float bdata[1]
+    bdata = [ 0.0 ]
+
+    print("TESTB!")
+    barycentric(3, ax, ay, adata, 3, ax, ay, bdata)
+
+testb()

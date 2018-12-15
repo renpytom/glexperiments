@@ -48,7 +48,7 @@ cdef void intersectLines(
     px[0] = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
     py[0] = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
 
-cdef void intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p, Polygon res):
+cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p):
 
     # The vector from a0 to a1.
     cdef float vecax = a1x - a0x
@@ -63,6 +63,7 @@ cdef void intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p, P
 
     cdef int i
     cdef int j
+    cdef bint allin = True
 
     # Figure out which points are 'inside' the wound line.
     for 0 <= i < p.points:
@@ -70,8 +71,13 @@ cdef void intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p, P
         vecpy = p.y[i] - a0y
 
         inside[i] = vecax * vecpy >= vecay * vecpx
+        allin = allin and inside[i]
 
-    res.points = 0
+    # If all the points are inside, just return the polygon intact.
+    if allin:
+        return p
+
+    rv = Polygon()
 
     j = p.points - 1
 
@@ -81,25 +87,26 @@ cdef void intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p, P
                 intersectLines(
                     a0x, a0y, a1x, a1y,
                     p.x[j], p.y[j], p.x[i], p.y[i],
-                    &res.x[res.points], &res.y[res.points])
+                    &rv.x[rv.points], &rv.y[rv.points])
 
-                res.points += 1
+                rv.points += 1
 
-            res.x[res.points] = p.x[i]
-            res.y[res.points] = p.y[i]
-            res.points += 1
+            rv.x[rv.points] = p.x[i]
+            rv.y[rv.points] = p.y[i]
+            rv.points += 1
 
         else:
             if inside[j]:
                 intersectLines(
                     a0x, a0y, a1x, a1y,
                     p.x[j], p.y[j], p.x[i], p.y[i],
-                    &res.x[res.points], &res.y[res.points])
+                    &rv.x[rv.points], &rv.y[rv.points])
 
-                res.points += 1
+                rv.points += 1
 
         j = i
 
+    return rv
 
 def intersect(Polygon a, Polygon b):
     """

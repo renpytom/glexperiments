@@ -200,6 +200,13 @@ def draw():
 
     glViewport(0, 0, 800, 800)
 
+
     draw_simple()
     draw_polygon(logo_mesh, [ 1.0, 0.0, 0.0, 1.0 ])
-    draw_mesh(logoTex, logo_mesh)
+
+    # draw_mesh(logoTex, logo_mesh)
+
+    offset = logo_mesh.copy()
+    offset.offset(50, 100, 0)
+
+    draw_mesh(logoTex, offset)

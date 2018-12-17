@@ -5,7 +5,11 @@ from cpython.array cimport array
 from cpython.array cimport copy as array_copy
 from libc.string cimport memcpy
 
-DEF MAX_POINTS = 1024
+DEF MAX_POINTS = 128
+
+DEF X = 0
+DEF Y = 1
+DEF Z = 2
 
 cdef class Polygon:
 
@@ -43,9 +47,29 @@ cdef class Polygon:
     def __dealloc__(self):
         free(self.data)
 
-DEF X = 0
-DEF Y = 1
-DEF Z = 2
+    cpdef Polygon copy(self):
+        """
+        Returns a copy of this polygon.
+        """
+
+        cdef Polygon rv = Polygon(self.stride, self.points, None)
+        rv.points = self.points
+        memcpy(rv.data, self.data, sizeof(float) * self.stride * self.points)
+        return rv
+
+    cpdef void offset(self, float x, float y, float z):
+
+        cdef float *p = self.data
+        cdef int i
+
+
+        for 0 <= i < self.points:
+            p[X] += x
+            p[Y] += y
+            p[Z] += z
+
+            p += self.stride
+
 
 cdef inline float get(Polygon p, int index, int offset):
     return p.data[index * p.stride + offset]
@@ -148,9 +172,9 @@ cdef Polygon restride_polygon(Polygon src, int new_stride):
     cdef int i
 
     for 0 <= i < src.points:
-        bp[0] = ap[0]
-        bp[1] = ap[1]
-        bp[2] = ap[2]
+        bp[X] = ap[X]
+        bp[Y] = ap[Y]
+        bp[Z] = ap[Z]
 
         ap += src.stride
         bp += rv.stride
@@ -317,3 +341,18 @@ cdef class Mesh:
                 i += p.points * self.stride
 
         return self.data + <int> self.attributes[name]
+
+    def copy(self):
+        rv = Mesh()
+        rv.stride = self.stride
+        rv.points = self.points
+        rv.polygons = [ i.copy() for i in self.polygons ]
+        rv.attributes = self.attributes
+
+        return rv
+
+    def offset(self, float x, float y, float z):
+        cdef Polygon p
+
+        for p in self.polygons:
+            p.offset(x, y, z)

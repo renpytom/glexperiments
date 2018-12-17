@@ -12,6 +12,10 @@ cdef class Polygon:
     # The data in a polygon.
     cdef float *data
 
+    cpdef Polygon copy(self)
+    cpdef void offset(self, float x, float y, float z)
+
+
 cdef class Mesh:
 
     # The total number of points.

@@ -217,6 +217,7 @@ class Main(object):
         self.draw_polygon(self.triangle_mesh, [ 0.0, 0.5, 0.0, 1.0 ])
 
         self.draw_polygon(self.combined_mesh, [ 0.5, 0.5, 0.0, 1.0 ])
+        self.draw_mesh(self.combined_mesh, self.logo_tex)
 
 
 

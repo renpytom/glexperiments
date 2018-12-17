@@ -1,8 +1,8 @@
 from cpython.array cimport array
 
 cdef class Polygon:
-    cdef public array xarray
-    cdef public array yarray
-    cdef public array zarray
-    cdef public dict data
-    cdef public int points
+    cdef int points
+    cdef int stride
+    cdef float *data
+
+    cdef Polygon copy(self, int stride)

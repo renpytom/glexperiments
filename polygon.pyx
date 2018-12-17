@@ -1,34 +1,65 @@
 from __future__ import print_function
 
+from libc.stdlib cimport malloc, free
 from cpython.array cimport array
 from cpython.array cimport copy as array_copy
 
-# The maximum number of points a polygon can have.
-
-DEF MAX_POINTS = 32
-
-cdef array template = array('f', [ 0 ] * MAX_POINTS)
+DEF MAX_POINTS = 1024
 
 cdef class Polygon:
-    def __init__(self):
-        self.xarray = array_copy(template)
-        self.yarray = array_copy(template)
-        self.zarray = array_copy(template)
-        self.data = { }
 
-        self.points = 0
+    def __dealloc__(self):
+        free(self.data)
 
-def polygon(l):
+    def __init__(self, int stride, data):
 
-    cdef Polygon rv = Polygon()
+        cdef int i
 
-    for i, (x, y) in enumerate(l):
-        rv.xarray[i] = x
-        rv.yarray[i] = y
+        self.stride = stride
 
-    rv.points = len(l)
+        if data is None:
+            self.points = 0
+            self.data = <float *> malloc(sizeof(float) * 1024)
+        else:
+            self.points = len(data) // self.stride
 
-    return rv
+            self.data = <float *> malloc(sizeof(float) * self.stride * self.points)
+
+            for 0 <= i < self.stride * self.points:
+                self.data[i] = data[i]
+
+    cdef Polygon copy(self, int stride):
+        cdef Polygon rv = Polygon(stride, None)
+
+        cdef float *ap = self.data
+        cdef float *bp = rv.data
+
+        cdef int i
+
+        for 0 <= i < self.points:
+            bp[0] = ap[0]
+            bp[1] = ap[1]
+            bp[2] = ap[2]
+
+            ap += self.stride
+            bp += rv.stride
+
+        return rv
+
+DEF X = 0
+DEF Y = 0
+DEF Z = 0
+
+cdef inline float get(Polygon p, int index, int offset):
+    return p.data[index * p.stride + offset]
+
+cdef inline float *ref(Polygon p, int index, int offset):
+    return &p.data[index * p.stride + offset]
+
+cdef inline float set(Polygon p, int index, int offset, float value):
+    p.data[index * p.stride + offset] = value
+    return value
+
 
 
 cdef void intersectLines(
@@ -49,10 +80,7 @@ cdef void intersectLines(
     px[0] = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
     py[0] = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
 
-cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p):
-
-    cdef float *px = p.xarray.data.as_floats
-    cdef float *py = p.yarray.data.as_floats
+cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p, int rvstride):
 
     # The vector from a0 to a1.
     cdef float vecax = a1x - a0x
@@ -71,8 +99,8 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
 
     # Figure out which points are 'inside' the wound line.
     for 0 <= i < p.points:
-        vecpx = px[i] - a0x
-        vecpy = py[i] - a0y
+        vecpx = get(p, i, X) - a0x
+        vecpy = get(p, i, Y) - a0y
 
         inside[i] = vecax * vecpy >= vecay * vecpx
         allin = allin and inside[i]
@@ -81,11 +109,7 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
     if allin:
         return p
 
-    rv = Polygon()
-
-    cdef float *rvx = rv.xarray.data.as_floats
-    cdef float *rvy = rv.yarray.data.as_floats
-
+    rv = Polygon(rvstride)
 
     j = p.points - 1
 
@@ -94,21 +118,21 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
             if not inside[j]:
                 intersectLines(
                     a0x, a0y, a1x, a1y,
-                    px[j], py[j], px[i], py[i],
-                    &rvx[rv.points], &rvy[rv.points])
+                    get(p, j, X), get(p, j, Y), get(p, i, X), get(p, i, Y),
+                    ref(rv, rv.points, X), ref(rv, rv.points, Y))
 
                 rv.points += 1
 
-            rvx[rv.points] = px[i]
-            rvy[rv.points] = py[i]
+            set(rv, rv.points, X, get(p, i, X))
+            set(rv, rv.points, Y, get(p, i, Y))
             rv.points += 1
 
         else:
             if inside[j]:
                 intersectLines(
                     a0x, a0y, a1x, a1y,
-                    px[j], py[j], px[i], py[i],
-                    &rvx[rv.points], &rvy[rv.points])
+                    get(p, j, X), get(p, j, Y), get(p, i, X), get(p, i, Y),
+                    ref(rv, rv.points, X), ref(rv, rv.points, Y))
 
                 rv.points += 1
 
@@ -116,7 +140,7 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
 
     return rv
 
-def intersect(Polygon a, Polygon b):
+def intersect(Polygon a, Polygon b, int rvstride):
     """
     Given two Polygons, returns a Polygon that is the intersection of the
     points in the two.
@@ -124,68 +148,44 @@ def intersect(Polygon a, Polygon b):
     This assumes that both polygons are convex and wound clockwise.
     """
 
-    cdef float *ax = a.xarray.data.as_floats
-    cdef float *ay = a.yarray.data.as_floats
-
     cdef int i
     cdef float a0x, a0y, a1x, a1y
 
-    a0x = ax[a.points-1]
-    a0y = ay[a.points-1]
+    a0x = get(a, a.points-1, X)
+    a0y = get(a, a.points-1, Y)
 
     cdef Polygon rv = b
 
     for 0 <= i < a.points:
-        a1x = ax[i]
-        a1y = ay[i]
+        a1x = get(a, i, X)
+        a1y = get(a, i, Y)
 
-        rv = intersectOnce(a0x, a0y, a1x, a1y, rv)
+        rv = intersectOnce(a0x, a0y, a1x, a1y, rv, rvstride)
         if rv.points < 3:
             return None
 
         a0x = a1x
         a0y = a1y
 
+    if rv is b:
+        rv = b.copy(rvstride)
+
     return rv
 
 
-def barycentric(
-    Polygon a,
-    Polygon b):
+def barycentric(Polygon a, Polygon b, int offset):
 
     cdef int i
     cdef int j
     cdef int k
 
-    cdef float *ax = a.xarray.data.as_floats
-    cdef float *ay = a.yarray.data.as_floats
-    cdef float *az = a.zarray.data.as_floats
+    cdef float ax0 = get(a, 0, X)
+    cdef float ay0 = get(a, 0, Y)
+    cdef float az0 = get(a, 0, Z)
 
-    cdef float *bx = b.xarray.data.as_floats
-    cdef float *by = b.yarray.data.as_floats
-    cdef float *bz = b.zarray.data.as_floats
-
-    cdef int datapoints = 0
-
-    cdef float *adata[128]
-    cdef float *bdata[128]
-
-    cdef array aa
-    cdef array ba
-
-    datapoints = 0
-
-    for attribute, aa in a.data.iteritems():
-        ba = array_copy(b.zarray)
-        b.data[attribute] = ba
-        adata[datapoints] = aa.data.as_floats
-        bdata[datapoints] = ba.data.as_floats
-        datapoints += 1
-
-
-    cdef float v0x = ax[1] - ax[0]
-    cdef float v0y = ay[1] - ay[0]
-    cdef float v0z = az[1] - az[0]
+    cdef float v0x = get(a, 1, X) - ax0
+    cdef float v0y = get(a, 1, Y) - ay0
+    cdef float v0z = get(a, 1, Z) - az0
 
     cdef float v1x, v1y, v1z, v2x, v2y, v2z
     cdef float d00, d01, d11, d20, d21
@@ -196,9 +196,9 @@ def barycentric(
 
     for 2 <= i < a.points:
 
-        v1x = ax[i] - ax[0]
-        v1y = ay[i] - ay[0]
-        v1z = az[i] - az[0]
+        v1x = get(a, i, X) - ax0
+        v1y = get(a, i, Y) - ay0
+        v1z = get(a, i, Z) - az0
 
         d00 = v0x * v0x + v0y * v0y
         d01 = v0x * v1x + v0y * v1y
@@ -215,8 +215,8 @@ def barycentric(
 
             for 0 <= j < b.points:
 
-                v2x = bx[j] - ax[0]
-                v2y = by[j] - ay[0]
+                v2x = get(b, j, X) - ax0
+                v2y = get(b, j, Y) - ay0
 
                 d20 = v2x * v0x + v2y * v0y
                 d21 = v2x * v1x + v2y * v1y
@@ -229,9 +229,10 @@ def barycentric(
 
                 u = 1.0 - v - w
 
-                bz[j] = u * az[0] + v * az[i-1] + w * az[i]
+                z = u * az0 + v * get(a, i-1, Z) + w * get(a, i, Z)
+                set(b, j, Z, z)
 
-                v2z = bz[j] - az[0]
+                v2z = z - az0
 
                 d203 = d20 + v2z * v0z
                 d213 = d21 + v2z * v1z
@@ -240,8 +241,11 @@ def barycentric(
                 w = (d003 * d213 - d013 * d203) / denom3
                 u = 1.0 - v - w
 
-                for 0 <= k < datapoints:
-                    bdata[k][j] = u * adata[k][0] + v * adata[k][i-1] + w * adata[k][i]
+                for 3 <= k < a.stride:
+                    set(b, j, k + offset,
+                        u * get(a, 0, k) +
+                        v * get(a, i-1, k) +
+                        w * get(a, i, k))
 
         v0x = v1x
         v0y = v1y

@@ -9,6 +9,7 @@ cdef class Program:
     cdef object vertex
     cdef object fragment
 
-    cdef list variables
+    cdef list uniforms
+    cdef list attributes
 
     cdef GLuint load_shader(self, GLenum shader_type, source) except? 0

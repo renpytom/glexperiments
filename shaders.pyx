@@ -3,6 +3,8 @@ from libc.stdlib cimport malloc, free
 
 from cpython.array cimport array
 
+from polygon cimport Polygon, Mesh
+
 class ShaderError(Exception):
     pass
 
@@ -52,20 +54,20 @@ UNIFORM_TYPES = {
     "sampler2D" : uniform_sampler2d,
     }
 
-def attribute_float(attribute, array data):
-    glVertexAttribPointer(attribute, 1, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
+def attribute_float(attribute, name, Mesh m):
+    glVertexAttribPointer(attribute, 1, GL_FLOAT, GL_FALSE, m.stride * sizeof(float), m.get_data(name))
     glEnableVertexAttribArray(attribute)
 
-def attribute_vec2(attribute, array data):
-    glVertexAttribPointer(attribute, 2, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
+def attribute_vec2(attribute, name, Mesh m):
+    glVertexAttribPointer(attribute, 2, GL_FLOAT, GL_FALSE, m.stride * sizeof(float), m.get_data(name))
     glEnableVertexAttribArray(attribute)
 
-def attribute_vec3(attribute, array data):
-    glVertexAttribPointer(attribute, 3, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
+def attribute_vec3(attribute, name, Mesh m):
+    glVertexAttribPointer(attribute, 3, GL_FLOAT, GL_FALSE, m.stride * sizeof(float), m.get_data(name))
     glEnableVertexAttribArray(attribute)
 
-def attribute_vec4(attribute, array data):
-    glVertexAttribPointer(attribute, 4, GL_FLOAT, GL_FALSE, 0, data.data.as_floats)
+def attribute_vec4(attribute, name, Mesh m):
+    glVertexAttribPointer(attribute, 4, GL_FLOAT, GL_FALSE, m.stride * sizeof(float), m.get_data(name))
     glEnableVertexAttribArray(attribute)
 
 ATTRIBUTE_TYPES = {
@@ -86,7 +88,8 @@ cdef class Program:
         self.fragment = fragment
 
         # A list of (name, location, data_function) tuples.
-        self.variables = [ ]
+        self.attributes = [ ]
+        self.uniforms = [ ]
 
     def find_variables(self, source):
 
@@ -134,13 +137,15 @@ cdef class Program:
             if tokens:
                 raise ShaderError("Spurious tokens after the name in '{}'. Arrays are not supported in Ren'Py.".format(l))
 
+            data_function = types[type]
+
             if storage == "uniform":
                 location = glGetUniformLocation(self.program, name)
+                self.uniforms.append((name, location, data_function))
             else:
                 location = glGetAttribLocation(self.program, name)
+                self.attributes.append((name, location, data_function))
 
-            data_function = types[type]
-            self.variables.append((name, location, data_function))
 
 
     cdef GLuint load_shader(self, GLenum shader_type, source) except? 0:
@@ -203,11 +208,15 @@ cdef class Program:
         self.find_variables(self.vertex)
         self.find_variables(self.fragment)
 
-    def setup(self, **kwargs):
+    def setup(self, Mesh mesh, **kwargs):
         glUseProgram(self.program)
 
-        for name, attribute, data_function in self.variables:
-            data_function(attribute, kwargs[name])
+        for name, location, data_function in self.uniforms:
+            data_function(location, kwargs[name])
+
+        for name, location, data_function in self.attributes:
+            data_function(location, name, mesh)
+
 
     def draw(self, mode, start, count):
         glDrawArrays(mode, start, count)

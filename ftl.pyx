@@ -10,6 +10,7 @@ from pygame_sdl2 cimport *
 import pygame_sdl2
 import_pygame_sdl2()
 
+from polygon import Mesh
 from shaders cimport Program
 from array import array
 
@@ -138,18 +139,13 @@ cpdef GLuint load_texture(fn):
     glClearColor(0, 0, 0, 0)
     glClear(GL_COLOR_BUFFER_BIT)
 
-    aPosition = array('f', [
-        -1.0, -1.0,
-        -1.0, 1.0,
-        1.0, 1.0,
-        1.0, -1.0,
-        ])
-
-    aTexCoord = array('f', [
-        0.0, 0.0,
-        0.0, 1.0,
-        1.0, 1.0,
-        1.0, 0.0,
+    m = Mesh()
+    m.add_attribute("aTexCoord", 2)
+    m.add_polygon([
+        -1.0, -1.0, 0.0, 0.0, 0.0,
+        -1.0,  1.0, 0.0, 0.0, 1.0,
+         1.0,  1.0, 0.0, 1.0, 1.0,
+         1.0, -1.0, 0.0, 1.0, 0.0,
         ])
 
     glActiveTexture(GL_TEXTURE0)
@@ -163,9 +159,8 @@ cpdef GLuint load_texture(fn):
     glEnable(GL_BLEND)
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ZERO, GL_ONE, GL_ZERO)
 
-    ftl_program.setup(aPosition=aPosition, aTexCoord=aTexCoord, uTex0=0)
+    ftl_program.setup(m, uTex0=0)
     ftl_program.draw(GL_TRIANGLE_FAN, 0, 4)
-
     glDeleteTextures(1, &tex)
 
     glBindTexture(GL_TEXTURE_2D, premultiplied)

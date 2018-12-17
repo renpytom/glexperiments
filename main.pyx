@@ -6,8 +6,8 @@ import_pygame_sdl2()
 
 from array import array
 from shaders cimport Program
-from polygon cimport Polygon
-from polygon import polygon, intersect, barycentric
+from polygon import Mesh
+
 from uguugl cimport *
 
 import ftl
@@ -23,18 +23,15 @@ precision highp float;
 
 uniform mat4 uTransform;
 
-attribute float x;
-attribute float y;
-attribute float z;
+attribute vec3 aPosition;
+attribute vec2 aTexCoord;
 
-attribute float s;
-attribute float t;
 
 varying vec2 vTexCoord;
 
 void main() {
-    vTexCoord = vec2(s, t);
-    gl_Position = vec4(x, y, z, 1.0) * uTransform;
+    vTexCoord = aTexCoord;
+    gl_Position = vec4(aPosition, 1.0) * uTransform;
 }
 """
 
@@ -60,11 +57,10 @@ precision highp float;
 
 uniform mat4 uTransform;
 
-attribute float aX;
-attribute float aY;
+attribute vec3 aPosition;
 
 void main() {
-    gl_Position = vec4(aX, aY, 0, 1) * uTransform;
+    gl_Position = vec4(aPosition, 1) * uTransform;
 }
 """
 
@@ -80,6 +76,18 @@ void main() {
 }
 """
 
+def texture_mesh(w, h):
+
+    rv = Mesh()
+    rv.add_attribute("aTexCoord", 2)
+    rv.add_polygon([
+        0.0, 0.0, 0.0, 0.0, 0.0,
+          w, 0.0, 0.0, 1.0, 0.0,
+          w,   h, 0.0, 1.0, 1.0,
+        0.0,   h, 0.0, 0.0, 1.0,
+        ])
+
+    return rv
 
 
 def init():
@@ -100,30 +108,11 @@ def init():
     poly_program = Program(POLYGON_VERTEX, POLYGON_FRAGMENT)
     poly_program.load()
 
-    global polygon1
-    polygon1 = polygon([
-            (200, 200),
-            (400, 200),
-            (400, 400),
-            (200, 400),
-        ])
-
-    polygon1.data['s'] = array('f', [0.0, 1.0, 1.0, 0.0])
-    polygon1.data['t'] = array('f', [0.0, 0.0, 1.0, 1.0])
-
-    global polygon2
-    polygon2 = polygon([
-        (300, 150),
-        (400, 450),
-        (200, 450),
-        ])
-
-    global polygon3
-    polygon3 = intersect(polygon1, polygon2)
-    barycentric(polygon1, polygon3)
+    global logo_mesh
+    logo_mesh = texture_mesh(234, 360)
 
 
-def blit(tex, Polygon p):
+def draw_mesh(tex, mesh):
 
     transform = array('f', [
         1.0 / 400.0, 0.0, 0.0, -1.0,
@@ -139,50 +128,23 @@ def blit(tex, Polygon p):
         0.0, 0.0, 0.0, 1.0,
         ])
 
-#
-#     positions = array('f', [
-#         x, y, 0.0, 1.0,
-#         x1, y, 0.0, 1.0,
-#         x, y1, 0.0, 1.0,
-#         x1, y1, 0.0, 1.0,
-#         ])
-#
-#     texture_coordinates=array('f', [
-#                   0.0, 0.0,
-#                   1.0, 0.0,
-#                   0.0, 1.0,
-#                   1.0, 1.0,
-#                   ])
-
-#     uColorMatrix = array('f', [
-#         .2126, .7152, .0722, 0.0,
-#         .199844, .672288, .067868, 0.0,
-#         .161576, .543552, .054872, 0.0,
-#         0.0, 0.0, 0.0, 1.0,
-#         ])
-
-
     glEnable(GL_BLEND)
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
 
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, tex)
 
+
     program.setup(
+        mesh,
         uTransform=transform,
         uTex0=0,
         uColorMatrix=uColorMatrix,
-
-        x = p.xarray,
-        y = p.yarray,
-        z = p.zarray,
-        s = p.data['s'],
-        t = p.data['t'],
         )
 
     program.draw(GL_TRIANGLE_FAN, 0, 4)
 
-def draw_polygon(Polygon p, color):
+def draw_polygon(mesh, color):
 
     transform = array('f', [
         1.0 / 400.0, 0.0, 0.0, -1.0,
@@ -192,28 +154,49 @@ def draw_polygon(Polygon p, color):
     ])
 
     poly_program.setup(
+        mesh,
         uTransform=transform,
         uColor=color,
-        aX=p.xarray,
-        aY=p.yarray,
         )
 
-    poly_program.draw(GL_TRIANGLE_FAN, 0, p.points)
+    poly_program.draw(GL_TRIANGLE_FAN, 0, 4)
+
+def draw_simple():
+
+    vertex = """\
+attribute vec3 aPosition;
+
+void main() {
+    gl_Position = vec4(aPosition, 1.0);
+}
+"""
+    fragment = """\
+void main() {
+    gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+}
+"""
+
+    p = Program(vertex, fragment)
+    p.load()
+
+    m = Mesh()
+    m.add_polygon([
+        -0.5, -0.5, 0.0,
+         0.5, -0.5, 0.0,
+         0.5, 0.5, 0.0,
+        -0.5, 0.5, 0.0,
+        ])
+
+    p.setup(m)
+    p.draw(GL_TRIANGLE_FAN, 0, 4)
 
 
 def draw():
-    glClearColor(0.8, 0.8, 0.8, 1.0)
+    glClearColor(0.7, 0.8, 0.8, 1.0)
     glClear(GL_COLOR_BUFFER_BIT)
 
     glViewport(0, 0, 800, 800)
 
-#    blit(logoTex, 0, 0, 234/2, 360/2)
-#     blit(logoTex, 800-234, 0, 234, 360)
-#     blit(blueTex, 0, 0, 234/2, 360/2)
-#     blit(blueTex, 234/2, 0, 234, 360)
-
-    draw_polygon(polygon1, [0.5, 0.0, 0.0, 1.0])
-    draw_polygon(polygon2, [0.0, 0.5, 0.0, 1.0])
-    draw_polygon(polygon3, [0.5, 0.5, 0.0, 1.0])
-
-    blit(logoTex, polygon3)
+    draw_simple()
+    draw_polygon(logo_mesh, [ 1.0, 0.0, 0.0, 1.0 ])
+    draw_mesh(logoTex, logo_mesh)

@@ -250,3 +250,33 @@ def barycentric(Polygon a, Polygon b, int offset):
         v0x = v1x
         v0y = v1y
 
+
+cdef class Mesh:
+
+    def __init__(self):
+        """
+        Creates a new mesh.
+        """
+
+        self.points = 0
+        self.stride = 3
+        self.polygons = [ ]
+        self.attributes = { "aPosition" : 0 }
+
+    def add_attribute(self, name, size):
+        self.attributes[name] = self.stride
+        self.stride += size
+
+    def add_polygon(self, data):
+        cdef Polygon p = Polygon(self.stride, data)
+        self.points += p.points
+
+        self.polygons.append(p)
+
+    cdef float *get_data(self, name):
+        cdef Polygon p = self.polygons[0]
+        return p.data + <int> self.attributes[name]
+
+
+
+

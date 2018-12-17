@@ -29,4 +29,8 @@ cdef class Mesh:
     # A list of polygons that comprise the mesh.
     cdef public list polygons
 
+    # An array that contains all the data from the points. This is NULL
+    # until it's created.
+    cdef float *data
+
     cdef float *get_data(self, name)

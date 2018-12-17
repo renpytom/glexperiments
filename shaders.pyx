@@ -208,7 +208,7 @@ cdef class Program:
         self.find_variables(self.vertex)
         self.find_variables(self.fragment)
 
-    def setup(self, Mesh mesh, **kwargs):
+    def draw(self, Mesh mesh, **kwargs):
         glUseProgram(self.program)
 
         for name, location, data_function in self.uniforms:
@@ -217,6 +217,9 @@ cdef class Program:
         for name, location, data_function in self.attributes:
             data_function(location, name, mesh)
 
+        cdef int i = 0
+        cdef Polygon p
 
-    def draw(self, mode, start, count):
-        glDrawArrays(mode, start, count)
+        for p in mesh.polygons:
+            glDrawArrays(GL_TRIANGLE_FAN, i, p.points)
+            i += p.points

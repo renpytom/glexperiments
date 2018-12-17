@@ -3,6 +3,7 @@ from __future__ import print_function
 from libc.stdlib cimport malloc, free
 from cpython.array cimport array
 from cpython.array cimport copy as array_copy
+from libc.string cimport memcpy
 
 DEF MAX_POINTS = 1024
 
@@ -262,6 +263,11 @@ cdef class Mesh:
         self.stride = 3
         self.polygons = [ ]
         self.attributes = { "aPosition" : 0 }
+        self.data = NULL
+
+    def __dealloc__(self):
+        if self.data:
+            free(self.data)
 
     def add_attribute(self, name, size):
         self.attributes[name] = self.stride
@@ -274,8 +280,29 @@ cdef class Mesh:
         self.polygons.append(p)
 
     cdef float *get_data(self, name):
-        cdef Polygon p = self.polygons[0]
-        return p.data + <int> self.attributes[name]
+        cdef Polygon p
+        cdef int i
+
+        if len(self.polygons) == 1:
+
+            p = self.polygons[0]
+            return p.data + <int> self.attributes[name]
+
+        if not self.data:
+            self.data = <float *> malloc(self.points * self.stride * sizeof(float))
+
+            i = 0
+
+            for p in self.polygons:
+                memcpy(&self.data[i], p.data, p.points * self.stride * sizeof(float))
+                i += p.points * self.stride
+
+        return self.data + <int> self.attributes[name]
+
+
+
+
+
 
 
 

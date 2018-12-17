@@ -80,11 +80,19 @@ def texture_mesh(w, h):
 
     rv = Mesh()
     rv.add_attribute("aTexCoord", 2)
+
     rv.add_polygon([
         0.0, 0.0, 0.0, 0.0, 0.0,
           w, 0.0, 0.0, 1.0, 0.0,
+          w,   h/2.0, 0.0, 1.0, 0.5,
+        0.0,   h/2.0, 0.0, 0.0, 0.5,
+        ])
+
+    rv.add_polygon([
+        0.0, h/2.0, 0.0, 0.0, 0.5,
+          w, h/2.0, 0.0, 1.0, 0.5,
           w,   h, 0.0, 1.0, 1.0,
-        0.0,   h, 0.0, 0.0, 1.0,
+        0.0,   h, 0.0, 0.0, 1,0,
         ])
 
     return rv
@@ -135,14 +143,12 @@ def draw_mesh(tex, mesh):
     glBindTexture(GL_TEXTURE_2D, tex)
 
 
-    program.setup(
+    program.draw(
         mesh,
         uTransform=transform,
         uTex0=0,
         uColorMatrix=uColorMatrix,
         )
-
-    program.draw(GL_TRIANGLE_FAN, 0, 4)
 
 def draw_polygon(mesh, color):
 
@@ -153,13 +159,11 @@ def draw_polygon(mesh, color):
         0.0, 0.0, 0.0, 1.0,
     ])
 
-    poly_program.setup(
+    poly_program.draw(
         mesh,
         uTransform=transform,
         uColor=color,
         )
-
-    poly_program.draw(GL_TRIANGLE_FAN, 0, 4)
 
 def draw_simple():
 
@@ -187,8 +191,7 @@ void main() {
         -0.5, 0.5, 0.0,
         ])
 
-    p.setup(m)
-    p.draw(GL_TRIANGLE_FAN, 0, 4)
+    p.draw(m)
 
 
 def draw():

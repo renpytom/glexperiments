@@ -159,8 +159,7 @@ cpdef GLuint load_texture(fn):
     glEnable(GL_BLEND)
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ZERO, GL_ONE, GL_ZERO)
 
-    ftl_program.setup(m, uTex0=0)
-    ftl_program.draw(GL_TRIANGLE_FAN, 0, 4)
+    ftl_program.draw(m, uTex0=0)
     glDeleteTextures(1, &tex)
 
     glBindTexture(GL_TEXTURE_2D, premultiplied)

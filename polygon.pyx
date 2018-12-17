@@ -138,7 +138,7 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
     return rv
 
 
-cdef Polygon copy_polygon(Polygon src, int new_stride):
+cdef Polygon restride_polygon(Polygon src, int new_stride):
 
     cdef Polygon rv = Polygon(new_stride, src.points, None)
 
@@ -188,7 +188,7 @@ def intersect(Polygon a, Polygon b, int rvstride):
 
     # This always has to copy the polygon, so if it's entirely inside, do so.
     if rv is b:
-        rv = copy_polygon(rv, rvstride)
+        rv = restride_polygon(rv, rvstride)
 
     return rv
 

@@ -24,9 +24,10 @@ setup(
     ext_modules=cythonize([
         extension("uguugl"),
         extension("uguu"),
+        extension("polygon"),
+        extension("mesh"),
         extension("shaders"),
         extension("ftl"),
-        extension("polygon"),
         extension("main"),
         ],
         include_path=[ ".." ])

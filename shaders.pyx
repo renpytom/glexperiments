@@ -3,7 +3,8 @@ from libc.stdlib cimport malloc, free
 
 from cpython.array cimport array
 
-from polygon cimport Polygon, Mesh
+from polygon cimport Polygon
+from mesh cimport Mesh
 
 class ShaderError(Exception):
     pass

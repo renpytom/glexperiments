@@ -10,9 +10,8 @@ from pygame_sdl2 cimport *
 import pygame_sdl2
 import_pygame_sdl2()
 
-from polygon import Mesh
+from mesh import Mesh
 from shaders cimport Program
-from array import array
 
 FTL_VERTEX_SHADER = b"""\
 #ifdef GL_ES

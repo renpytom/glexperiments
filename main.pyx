@@ -6,7 +6,7 @@ import_pygame_sdl2()
 
 from array import array
 from shaders cimport Program
-from polygon import Mesh
+from mesh import Mesh
 
 from uguugl cimport *
 

@@ -207,7 +207,6 @@ class Main(object):
 
         glViewport(0, 0, 800, 800)
 
-
         # draw_simple()
         # draw_polygon(logo_mesh, [ 1.0, 0.0, 0.0, 1.0 ])
 
@@ -218,14 +217,6 @@ class Main(object):
 
         self.draw_polygon(self.combined_mesh, [ 0.5, 0.5, 0.0, 1.0 ])
         self.draw_mesh(self.combined_mesh, self.logo_tex)
-
-
-
-#
-#         offset = logo_mesh.copy()
-#         offset.offset(50, 100, 0)
-#         draw_pok
-#         draw_mesh(logoTex, offset)
 
 main = Main()
 init = main.init

@@ -102,6 +102,11 @@ cdef class Mesh:
             p.offset(x, y, z)
 
     def intersect(self, Mesh other):
+        """
+        Intersects this mesh with this one. The resulting mesh has z-coordinates
+        from this one. Attributes that are present in this mesh are taken from
+        this mesh, otherwise the attributes from the other mesh are used.
+        """
 
         rv = Mesh()
         rv.stride = self.stride + other.stride - 3
@@ -127,3 +132,30 @@ cdef class Mesh:
 
         return rv
 
+    def crop(self, Mesh other):
+        """
+        Crops this mesh with the other one. No attributes are taken from the other
+        mesh.
+        """
+
+        rv = Mesh()
+        rv.stride = self.stride
+        rv.attributes = self.attributes
+
+        cdef Polygon op
+        cdef Polygon sp
+        cdef Polygon p
+
+        for op in other.polygons:
+            for sp in self.polygons:
+                p = intersect(op, sp, rv.stride)
+
+                if p is None:
+                    continue
+
+                barycentric(sp, p, 0)
+
+                rv.polygons.append(p)
+                rv.points += p.points
+
+        return rv

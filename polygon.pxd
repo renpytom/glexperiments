@@ -13,3 +13,5 @@ cdef class Polygon:
     cpdef Polygon copy(self)
     cpdef void offset(self, float x, float y, float z)
 
+cpdef intersect(Polygon a, Polygon b, int rvstride)
+cpdef barycentric(Polygon a, Polygon b, int offset)

@@ -128,7 +128,7 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
     if allin:
         return p
 
-    rv = Polygon(rvstride, p.points * 2)
+    rv = Polygon(rvstride, p.points * 2, None)
 
     j = p.points - 1
 
@@ -181,7 +181,7 @@ cdef Polygon restride_polygon(Polygon src, int new_stride):
 
 
 
-def intersect(Polygon a, Polygon b, int rvstride):
+cpdef intersect(Polygon a, Polygon b, int rvstride):
     """
     Given two Polygons, returns a Polygon that is the intersection of the
     points in the two.
@@ -215,7 +215,7 @@ def intersect(Polygon a, Polygon b, int rvstride):
     return rv
 
 
-def barycentric(Polygon a, Polygon b, int offset):
+cpdef barycentric(Polygon a, Polygon b, int offset):
 
     cdef int i
     cdef int j

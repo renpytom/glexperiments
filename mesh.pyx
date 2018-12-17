@@ -1,7 +1,8 @@
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
 
-from polygon cimport Polygon
+from polygon cimport Polygon, intersect, barycentric
+
 
 cdef class Mesh:
 
@@ -99,3 +100,30 @@ cdef class Mesh:
 
         for p in self.polygons:
             p.offset(x, y, z)
+
+    def intersect(self, Mesh other):
+
+        rv = Mesh()
+        rv.stride = self.stride + other.stride - 3
+        rv.attributes = { k : v + self.stride - 3 for k, v in other.attributes.iteritems() }
+        rv.attributes.update(self.attributes)
+
+        cdef Polygon op
+        cdef Polygon sp
+        cdef Polygon p
+
+        for op in other.polygons:
+            for sp in self.polygons:
+                p = intersect(op, sp, rv.stride)
+
+                if p is None:
+                    continue
+
+                barycentric(op, p, self.stride - 3)
+                barycentric(sp, p, 0)
+
+                rv.polygons.append(p)
+                rv.points += p.points
+
+        return rv
+

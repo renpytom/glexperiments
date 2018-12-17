@@ -97,116 +97,135 @@ def texture_mesh(w, h):
 
     return rv
 
+class Main(object):
 
-def init():
+    def init(self):
 
-    ftl.init_ftl()
+        ftl.init_ftl()
 
-    global program
-    program = Program(VERTEX_SHADER, FRAGMENT_SHADER)
-    program.load()
+        global program
+        self.blit_program = Program(VERTEX_SHADER, FRAGMENT_SHADER)
+        self.blit_program.load()
 
-    global logoTex
-    global blueTex
+        self.logo_tex = ftl.load_texture("logo base.png")
+        self.blue_tex = ftl.load_texture("blue.png")
 
-    logoTex = ftl.load_texture("logo base.png")
-    blueTex = ftl.load_texture("blue.png")
+        self.poly_program = Program(POLYGON_VERTEX, POLYGON_FRAGMENT)
+        self.poly_program.load()
 
-    global poly_program
-    poly_program = Program(POLYGON_VERTEX, POLYGON_FRAGMENT)
-    poly_program.load()
+        self.logo_mesh = texture_mesh(234, 360)
+        self.offset_mesh = self.logo_mesh.copy()
+        self.offset_mesh.offset(100, 100, 0)
 
-    global logo_mesh
-    logo_mesh = texture_mesh(234, 360)
-
-
-def draw_mesh(tex, mesh):
-
-    transform = array('f', [
-        1.0 / 400.0, 0.0, 0.0, -1.0,
-        0.0, -1.0 / 400.0, 0.0, 1.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    ])
-
-    uColorMatrix = array('f', [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
+        self.triangle_mesh = Mesh()
+        self.triangle_mesh.add_polygon([
+            217, 50, 0,
+            334, 510, 0,
+            100, 510, 0,
         ])
 
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
-
-    glActiveTexture(GL_TEXTURE0)
-    glBindTexture(GL_TEXTURE_2D, tex)
+        self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
 
 
-    program.draw(
-        mesh,
-        uTransform=transform,
-        uTex0=0,
-        uColorMatrix=uColorMatrix,
-        )
+    def draw_mesh(self, mesh, tex):
 
-def draw_polygon(mesh, color):
-
-    transform = array('f', [
-        1.0 / 400.0, 0.0, 0.0, -1.0,
-        0.0, -1.0 / 400.0, 0.0, 1.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    ])
-
-    poly_program.draw(
-        mesh,
-        uTransform=transform,
-        uColor=color,
-        )
-
-def draw_simple():
-
-    vertex = """\
-attribute vec3 aPosition;
-
-void main() {
-    gl_Position = vec4(aPosition, 1.0);
-}
-"""
-    fragment = """\
-void main() {
-    gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
-}
-"""
-
-    p = Program(vertex, fragment)
-    p.load()
-
-    m = Mesh()
-    m.add_polygon([
-        -0.5, -0.5, 0.0,
-         0.5, -0.5, 0.0,
-         0.5, 0.5, 0.0,
-        -0.5, 0.5, 0.0,
+        transform = array('f', [
+            1.0 / 400.0, 0.0, 0.0, -1.0,
+            0.0, -1.0 / 400.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
         ])
 
-    p.draw(m)
+        uColorMatrix = array('f', [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+            ])
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, tex)
 
 
-def draw():
-    glClearColor(0.7, 0.8, 0.8, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT)
+        self.blit_program.draw(
+            mesh,
+            uTransform=transform,
+            uTex0=0,
+            uColorMatrix=uColorMatrix,
+            )
 
-    glViewport(0, 0, 800, 800)
+    def draw_polygon(self, mesh, color):
+
+        transform = array('f', [
+            1.0 / 400.0, 0.0, 0.0, -1.0,
+            0.0, -1.0 / 400.0, 0.0, 1.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ])
+
+        self.poly_program.draw(
+            mesh,
+            uTransform=transform,
+            uColor=color,
+            )
+
+    def draw_simple(self):
+
+        vertex = """\
+    attribute vec3 aPosition;
+
+    void main() {
+        gl_Position = vec4(aPosition, 1.0);
+    }
+    """
+        fragment = """\
+    void main() {
+        gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+    }
+    """
+
+        p = Program(vertex, fragment)
+        p.load()
+
+        m = Mesh()
+        m.add_polygon([
+            -0.5, -0.5, 0.0,
+             0.5, -0.5, 0.0,
+             0.5, 0.5, 0.0,
+            -0.5, 0.5, 0.0,
+            ])
+
+        p.draw(m)
 
 
-    draw_simple()
-    draw_polygon(logo_mesh, [ 1.0, 0.0, 0.0, 1.0 ])
+    def draw(self):
+        glClearColor(0.7, 0.8, 0.8, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
 
-    # draw_mesh(logoTex, logo_mesh)
+        glViewport(0, 0, 800, 800)
 
-    offset = logo_mesh.copy()
-    offset.offset(50, 100, 0)
 
-    draw_mesh(logoTex, offset)
+        # draw_simple()
+        # draw_polygon(logo_mesh, [ 1.0, 0.0, 0.0, 1.0 ])
+
+        # draw_mesh(logoTex, logo_mesh)
+
+        self.draw_polygon(self.offset_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
+        self.draw_polygon(self.triangle_mesh, [ 0.0, 0.5, 0.0, 1.0 ])
+
+        self.draw_polygon(self.combined_mesh, [ 0.5, 0.5, 0.0, 1.0 ])
+
+
+
+#
+#         offset = logo_mesh.copy()
+#         offset.offset(50, 100, 0)
+#         draw_pok
+#         draw_mesh(logoTex, offset)
+
+main = Main()
+init = main.init
+draw = main.draw

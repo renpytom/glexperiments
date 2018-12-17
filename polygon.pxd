@@ -12,9 +12,6 @@ cdef class Polygon:
     # The data in a polygon.
     cdef float *data
 
-    cdef Polygon copy(self, int stride)
-
-
 cdef class Mesh:
 
     # The total number of points.

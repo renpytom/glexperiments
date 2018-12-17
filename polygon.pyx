@@ -9,47 +9,43 @@ DEF MAX_POINTS = 1024
 
 cdef class Polygon:
 
-    def __dealloc__(self):
-        free(self.data)
+    def __init__(self, int stride, int points, data):
+        """
+        Allocates a new Polygon.
 
-    def __init__(self, int stride, data):
+        `stride`
+            The number of floats per vertex. This should be at least 3, for the
+            default aPosition vec3.
+
+        `points`
+            The number of vertices in the polygon that space is allocated for.
+            If `data` is given, this is also the number of points in the polygon.
+
+        `data`
+            If not None, an iterable of length stride * points, that gives the
+            vertex data for each of the points.
+        """
 
         cdef int i
 
         self.stride = stride
 
+        self.data = <float *> malloc(sizeof(float) * points * stride)
+
         if data is None:
             self.points = 0
-            self.data = <float *> malloc(sizeof(float) * 1024)
         else:
-            self.points = len(data) // self.stride
+            self.points = points
 
-            self.data = <float *> malloc(sizeof(float) * self.stride * self.points)
-
-            for 0 <= i < self.stride * self.points:
+            for 0 <= i < stride * points:
                 self.data[i] = data[i]
 
-    cdef Polygon copy(self, int stride):
-        cdef Polygon rv = Polygon(stride, None)
-
-        cdef float *ap = self.data
-        cdef float *bp = rv.data
-
-        cdef int i
-
-        for 0 <= i < self.points:
-            bp[0] = ap[0]
-            bp[1] = ap[1]
-            bp[2] = ap[2]
-
-            ap += self.stride
-            bp += rv.stride
-
-        return rv
+    def __dealloc__(self):
+        free(self.data)
 
 DEF X = 0
-DEF Y = 0
-DEF Z = 0
+DEF Y = 1
+DEF Z = 2
 
 cdef inline float get(Polygon p, int index, int offset):
     return p.data[index * p.stride + offset]
@@ -110,7 +106,7 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
     if allin:
         return p
 
-    rv = Polygon(rvstride)
+    rv = Polygon(rvstride, p.points * 2)
 
     j = p.points - 1
 
@@ -141,6 +137,28 @@ cdef Polygon intersectOnce(float a0x, float a0y, float a1x, float a1y, Polygon p
 
     return rv
 
+
+cdef Polygon copy_polygon(Polygon src, int new_stride):
+
+    cdef Polygon rv = Polygon(new_stride, src.points, None)
+
+    cdef float *ap = src.data
+    cdef float *bp = rv.data
+
+    cdef int i
+
+    for 0 <= i < src.points:
+        bp[0] = ap[0]
+        bp[1] = ap[1]
+        bp[2] = ap[2]
+
+        ap += src.stride
+        bp += rv.stride
+
+    return rv
+
+
+
 def intersect(Polygon a, Polygon b, int rvstride):
     """
     Given two Polygons, returns a Polygon that is the intersection of the
@@ -168,8 +186,9 @@ def intersect(Polygon a, Polygon b, int rvstride):
         a0x = a1x
         a0y = a1y
 
+    # This always has to copy the polygon, so if it's entirely inside, do so.
     if rv is b:
-        rv = b.copy(rvstride)
+        rv = copy_polygon(rv, rvstride)
 
     return rv
 
@@ -274,7 +293,7 @@ cdef class Mesh:
         self.stride += size
 
     def add_polygon(self, data):
-        cdef Polygon p = Polygon(self.stride, data)
+        cdef Polygon p = Polygon(self.stride, len(data) // self.stride, data)
         self.points += p.points
 
         self.polygons.append(p)
@@ -298,12 +317,3 @@ cdef class Mesh:
                 i += p.points * self.stride
 
         return self.data + <int> self.attributes[name]
-
-
-
-
-
-
-
-
-

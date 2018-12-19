@@ -5,8 +5,9 @@ import pygame_sdl2
 import_pygame_sdl2()
 
 from array import array
-from shaders cimport Program
+from shaders import Program
 from mesh import Mesh
+from matrix import Matrix
 
 from uguugl cimport *
 
@@ -129,14 +130,16 @@ class Main(object):
 
     def draw_mesh(self, mesh, tex):
 
-        transform = array('f', [
+        transform = Matrix(4, [
             1.0 / 400.0, 0.0, 0.0, -1.0,
             0.0, -1.0 / 400.0, 0.0, 1.0,
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0,
         ])
 
-        uColorMatrix = array('f', [
+        print(transform)
+
+        uColorMatrix = Matrix(4, [
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
@@ -159,7 +162,7 @@ class Main(object):
 
     def draw_polygon(self, mesh, color):
 
-        transform = array('f', [
+        transform = Matrix(4, [
             1.0 / 400.0, 0.0, 0.0, -1.0,
             0.0, -1.0 / 400.0, 0.0, 1.0,
             0.0, 0.0, 1.0, 0.0,

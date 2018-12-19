@@ -6,7 +6,7 @@ from polygon cimport Polygon, intersect, barycentric
 
 cdef class Mesh:
 
-    def __init__(self):
+    def __init__(Mesh self):
         """
         Represents a mesh consisting of one or more polygons.
 
@@ -25,11 +25,11 @@ cdef class Mesh:
         self.attributes = { "aPosition" : 0 }
         self.data = NULL
 
-    def __dealloc__(self):
+    def __dealloc__(Mesh self):
         if self.data:
             free(self.data)
 
-    def add_attribute(self, name, size):
+    def add_attribute(Mesh self, name, size):
         """
         Adds an attribute to this mesh.
 
@@ -43,7 +43,7 @@ cdef class Mesh:
         self.attributes[name] = self.stride
         self.stride += size
 
-    def add_polygon(self, data):
+    def add_polygon(Mesh self, data):
         """
         Adds a polygon.
 
@@ -58,7 +58,7 @@ cdef class Mesh:
 
         self.polygons.append(p)
 
-    cdef float *get_data(self, name):
+    cdef float *get_data(Mesh self, name):
         cdef Polygon p
         cdef int i
 
@@ -78,7 +78,7 @@ cdef class Mesh:
 
         return self.data + <int> self.attributes[name]
 
-    def copy(self):
+    def copy(Mesh self):
         """
         Returns a copy of this mesh.
         """
@@ -91,7 +91,7 @@ cdef class Mesh:
 
         return rv
 
-    def offset(self, float x, float y, float z):
+    def offset(Mesh self, float x, float y, float z):
         """
         Applies an offset to the position of every
         """
@@ -101,7 +101,7 @@ cdef class Mesh:
         for p in self.polygons:
             p.offset(x, y, z)
 
-    def intersect(self, Mesh other):
+    def intersect(Mesh self, Mesh other):
         """
         Intersects this mesh with this one. The resulting mesh has z-coordinates
         from this one. Attributes that are present in this mesh are taken from
@@ -132,7 +132,7 @@ cdef class Mesh:
 
         return rv
 
-    def crop(self, Mesh other):
+    def crop(Mesh self, Mesh other):
         """
         Crops this mesh with the other one. No attributes are taken from the other
         mesh.

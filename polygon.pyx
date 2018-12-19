@@ -11,7 +11,7 @@ DEF Z = 2
 
 cdef class Polygon:
 
-    def __init__(self, int stride, int points, data):
+    def __init__(Polygon self, int stride, int points, data):
         """
         Allocates a new Polygon.
 
@@ -42,10 +42,10 @@ cdef class Polygon:
             for 0 <= i < stride * points:
                 self.data[i] = data[i]
 
-    def __dealloc__(self):
+    def __dealloc__(Polygon self):
         free(self.data)
 
-    cpdef Polygon copy(self):
+    cpdef Polygon copy(Polygon self):
         """
         Returns a copy of this polygon.
         """
@@ -55,7 +55,7 @@ cdef class Polygon:
         memcpy(rv.data, self.data, sizeof(float) * self.stride * self.points)
         return rv
 
-    cpdef void offset(self, float x, float y, float z):
+    cpdef void offset(Polygon self, float x, float y, float z):
 
         cdef float *p = self.data
         cdef int i

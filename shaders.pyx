@@ -1,10 +1,9 @@
 from uguugl cimport *
 from libc.stdlib cimport malloc, free
 
-from cpython.array cimport array
-
 from polygon cimport Polygon
 from mesh cimport Mesh
+from matrix cimport Matrix
 
 class ShaderError(Exception):
     pass
@@ -32,14 +31,14 @@ def uniform_vec4(uniform, data):
     a, b, c, d = data
     glUniform4f(uniform, a, b, c, d)
 
-def uniform_mat2(uniform, array data):
-    glUniformMatrix2fv(uniform, 1, GL_FALSE, data.data.as_floats)
+def uniform_mat2(uniform, Matrix data):
+    glUniformMatrix2fv(uniform, 1, GL_FALSE, data.m)
 
-def uniform_mat3(uniform, array data):
-    glUniformMatrix3fv(uniform, 1, GL_FALSE, data.data.as_floats)
+def uniform_mat3(uniform, Matrix data):
+    glUniformMatrix3fv(uniform, 1, GL_FALSE, data.m)
 
-def uniform_mat4(uniform, array data):
-    glUniformMatrix4fv(uniform, 1, GL_FALSE, data.data.as_floats)
+def uniform_mat4(uniform, Matrix data):
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, data.m)
 
 def uniform_sampler2d(uniform, data):
     glUniform1i(uniform, data)

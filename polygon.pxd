@@ -1,3 +1,5 @@
+from matrix cimport Matrix
+
 cdef class Polygon:
 
     # The number of points in the polygon.
@@ -12,6 +14,7 @@ cdef class Polygon:
 
     cpdef Polygon copy(self)
     cpdef void offset(self, float x, float y, float z)
+    cpdef void multiply_matrix(Polygon self, int offset, int size, Matrix matrix)
 
 cpdef intersect(Polygon a, Polygon b, int rvstride)
 cpdef barycentric(Polygon a, Polygon b, int offset)

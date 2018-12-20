@@ -1,4 +1,5 @@
 from polygon cimport Polygon
+from matrix cimport Matrix
 
 cdef class Mesh:
 
@@ -19,3 +20,4 @@ cdef class Mesh:
     cdef float *data
 
     cdef float *get_data(self, name)
+

@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from matrix cimport Matrix
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
 
@@ -56,6 +57,9 @@ cdef class Polygon:
         return rv
 
     cpdef void offset(Polygon self, float x, float y, float z):
+        """
+        Apply an offset to the position of each vertex
+        """
 
         cdef float *p = self.data
         cdef int i
@@ -65,6 +69,47 @@ cdef class Polygon:
             p[X] += x
             p[Y] += y
             p[Z] += z
+
+            p += self.stride
+
+    cpdef void multiply_matrix(Polygon self, int offset, int size, Matrix matrix):
+        """
+        Multiplies the location of the vertex by `matrix`, which can be 2, 3, or 4
+        elements wide. This always updates the 3 elements of the vertex -
+        for a 4-element one, the vector is expected to be [x y z 1].
+
+        `offset`
+            The offset of the attribute to use.
+        """
+
+        cdef int i, x, y
+        cdef float *p = self.data + offset
+        cdef float *m = matrix.m
+        cdef int d = matrix.dimensions
+
+        cdef float py
+
+        cdef float vec[5]
+
+        vec[0] = 1.0
+        vec[1] = 1.0
+        vec[2] = 1.0
+        vec[3] = 1.0
+        vec[4] = 1.0
+
+        for 0 <= i < self.points:
+
+            for 0 <= y < size:
+                vec[y] = p[y]
+
+
+            for 0 <= y < size:
+                py = 0
+
+                for 0 <= x < d:
+                    py += m[y * d + x] * vec[x]
+
+                p[y] = py
 
             p += self.stride
 

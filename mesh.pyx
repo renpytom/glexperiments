@@ -93,13 +93,36 @@ cdef class Mesh:
 
     def offset(Mesh self, float x, float y, float z):
         """
-        Applies an offset to the position of every
+        Applies an offset to the position of every vertex.
         """
 
         cdef Polygon p
 
         for p in self.polygons:
             p.offset(x, y, z)
+
+    def multiply_matrix(Mesh self, attribute, int attribute_size, Matrix matrix):
+        """
+        Multiplies vertex data by a matrix.
+
+        `attribute`
+            The offset of the attribute in question.
+
+        `attibute_size`
+            The number of elements in the attribute. If the matrix is larger
+            than this, other fields are padded with 1s.
+
+        `matrix`
+            The matrix to use.
+        """
+
+        cdef Polygon p
+
+        cdef int offset = self.attributes[attribute]
+
+        for p in self.polygons:
+            p.multiply_matrix(offset, attribute_size, matrix)
+
 
     def intersect(Mesh self, Mesh other):
         """
@@ -159,3 +182,6 @@ cdef class Mesh:
                 rv.points += p.points
 
         return rv
+
+
+

@@ -40,6 +40,18 @@ cdef class Matrix:
         return rv
 
 
+    def __getitem__(Matrix self, int index):
+        if (index < 0) or (index >= self.dimension * self.dimension):
+            raise IndexError("Matrix index out of range.")
+
+        return self.m[index]
+
+    def __setitem__(Matrix self, int index, float value):
+        if (index < 0) or (index >= self.dimension * self.dimension):
+            raise IndexError("Matrix index out of range.")
+
+        self.m[index] = value
+
     def __repr__(self):
 
         cdef int x, y

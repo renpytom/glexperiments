@@ -20,7 +20,7 @@ cdef class Mesh:
         """
 
         self.points = 0
-        self.stride = 3
+        self.stride = 4
         self.polygons = [ ]
         self.attributes = { "aPosition" : 0 }
         self.data = NULL
@@ -132,8 +132,8 @@ cdef class Mesh:
         """
 
         rv = Mesh()
-        rv.stride = self.stride + other.stride - 3
-        rv.attributes = { k : v + self.stride - 3 for k, v in other.attributes.iteritems() }
+        rv.stride = self.stride + other.stride - 4
+        rv.attributes = { k : v + self.stride - 4 for k, v in other.attributes.iteritems() }
         rv.attributes.update(self.attributes)
 
         cdef Polygon op
@@ -147,7 +147,7 @@ cdef class Mesh:
                 if p is None:
                     continue
 
-                barycentric(op, p, self.stride - 3)
+                barycentric(op, p, self.stride - 4)
                 barycentric(sp, p, 0)
 
                 rv.polygons.append(p)

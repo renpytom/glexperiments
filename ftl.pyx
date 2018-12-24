@@ -18,14 +18,14 @@ FTL_VERTEX_SHADER = b"""\
 precision highp float;
 #endif
 
-attribute vec2 aPosition;
+attribute vec4 aPosition;
 attribute vec2 aTexCoord;
 
 varying vec2 vTexCoord;
 
 void main() {
     vTexCoord = aTexCoord;
-    gl_Position = vec4(aPosition, 0.0, 1.0);
+    gl_Position = aPosition;
 }
 """
 
@@ -141,10 +141,10 @@ cpdef GLuint load_texture(fn):
     m = Mesh()
     m.add_attribute("aTexCoord", 2)
     m.add_polygon([
-        -1.0, -1.0, 0.0, 0.0, 0.0,
-        -1.0,  1.0, 0.0, 0.0, 1.0,
-         1.0,  1.0, 0.0, 1.0, 1.0,
-         1.0, -1.0, 0.0, 1.0, 0.0,
+        -1.0, -1.0, 0.0, 1.0, 0.0, 0.0,
+        -1.0,  1.0, 0.0, 1.0, 0.0, 1.0,
+         1.0,  1.0, 0.0, 1.0, 1.0, 1.0,
+         1.0, -1.0, 0.0, 1.0, 1.0, 0.0,
         ])
 
     glActiveTexture(GL_TEXTURE0)

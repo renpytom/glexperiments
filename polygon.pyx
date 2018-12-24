@@ -9,6 +9,7 @@ DEF MAX_POINTS = 128
 DEF X = 0
 DEF Y = 1
 DEF Z = 2
+DEF W = 3
 
 cdef class Polygon:
 
@@ -112,6 +113,17 @@ cdef class Polygon:
                 p[y] = py
 
             p += self.stride
+
+
+    def print_points(self, prefix):
+        cdef int i
+        cdef int p
+
+        for 0 <= p < self.points:
+            print(prefix, p, end=':')
+            for 0 <= i < self.stride:
+                print(self.data[p * self.stride + i], end=' ')
+            print()
 
 
 cdef inline float get(Polygon p, int index, int offset):
@@ -247,6 +259,7 @@ cpdef intersect(Polygon a, Polygon b, int rvstride):
         a1y = get(a, i, Y)
 
         rv = intersectOnce(a0x, a0y, a1x, a1y, rv, rvstride)
+
         if rv.points < 3:
             return None
 
@@ -318,6 +331,7 @@ cpdef barycentric(Polygon a, Polygon b, int offset):
 
                 z = u * az0 + v * get(a, i-1, Z) + w * get(a, i, Z)
                 set(b, j, Z, z)
+                set(b, j, W, 1.0)
 
                 v2z = z - az0
 

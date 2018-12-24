@@ -221,5 +221,6 @@ cdef class Program:
         cdef Polygon p
 
         for p in mesh.polygons:
+
             glDrawArrays(GL_TRIANGLE_FAN, i, p.points)
             i += p.points

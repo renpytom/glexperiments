@@ -7,7 +7,7 @@ import_pygame_sdl2()
 from array import array
 from shaders import Program
 from mesh import Mesh
-from matrix import Matrix
+from matrix import Matrix, frustum_matrix
 
 from uguugl cimport *
 
@@ -24,7 +24,7 @@ precision highp float;
 
 uniform mat4 uTransform;
 
-attribute vec3 aPosition;
+attribute vec4 aPosition;
 attribute vec2 aTexCoord;
 
 
@@ -32,7 +32,7 @@ varying vec2 vTexCoord;
 
 void main() {
     vTexCoord = aTexCoord;
-    gl_Position = vec4(aPosition, 1.0) * uTransform;
+    gl_Position = vec4(aPosition.xyz, 1) * uTransform;
 }
 """
 
@@ -58,10 +58,10 @@ precision highp float;
 
 uniform mat4 uTransform;
 
-attribute vec3 aPosition;
+attribute vec4 aPosition;
 
 void main() {
-    gl_Position = vec4(aPosition, 1) * uTransform;
+    gl_Position = vec4(aPosition.xyz, 1) * uTransform;
 }
 """
 
@@ -83,18 +83,18 @@ def texture_mesh(w, h):
     rv.add_attribute("aTexCoord", 2)
 
     rv.add_polygon([
-        0.0, 0.0, 0.0, 0.0, 0.0,
-          w, 0.0, 0.0, 1.0, 0.0,
-          w,   h/2.0, 0.0, 1.0, 0.5,
-        0.0,   h/2.0, 0.0, 0.0, 0.5,
+        0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+          w, 0.0, 0.0, 1.0, 1.0, 0.0,
+          w,   h, 0.0, 1.0, 1.0, 1.0,
+        0.0,   h, 0.0, 1.0, 0.0, 1.0,
         ])
 
-    rv.add_polygon([
-        0.0, h/2.0, 0.0, 0.0, 0.5,
-          w, h/2.0, 0.0, 1.0, 0.5,
-          w,   h, 0.0, 1.0, 1.0,
-        0.0,   h, 0.0, 0.0, 1,0,
-        ])
+#     rv.add_polygon([
+#         0.0, h/2.0, 0.0, 1.0, 0.0, 0.5,
+#           w, h/2.0, 0.0, 1.0, 1.0, 0.5,
+#           w,   h, 0.0, 1.0, 1.0, 1.0,
+#         0.0,   h, 0.0, 1.0, 0.0, 1,0,
+#         ])
 
     return rv
 
@@ -120,9 +120,9 @@ class Main(object):
 
         self.triangle_mesh = Mesh()
         self.triangle_mesh.add_polygon([
-            217, 50, 0,
-            334, 510, 0,
-            100, 510, 0,
+            217, 50, 0, 1,
+            334, 510, 0, 1,
+            100, 510, 0, 1,
         ])
 
         self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
@@ -136,8 +136,6 @@ class Main(object):
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0,
         ])
-
-        print(transform)
 
         uColorMatrix = Matrix(4, [
             1.0, 0.0, 0.0, 0.0,
@@ -210,15 +208,14 @@ class Main(object):
 
         glViewport(0, 0, 800, 800)
 
-        # draw_simple()
-        # draw_polygon(logo_mesh, [ 1.0, 0.0, 0.0, 1.0 ])
-
-        # draw_mesh(logoTex, logo_mesh)
+#         self.draw_polygon(self.logo_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
+#         self.draw_mesh(self.logo_mesh, self.logo_tex)
 
         self.draw_polygon(self.offset_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
         self.draw_polygon(self.triangle_mesh, [ 0.0, 0.5, 0.0, 1.0 ])
 
         self.draw_polygon(self.combined_mesh, [ 0.5, 0.5, 0.0, 1.0 ])
+
         self.draw_mesh(self.combined_mesh, self.logo_tex)
 
 main = Main()

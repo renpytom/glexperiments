@@ -66,3 +66,32 @@ cdef class Matrix:
                 rv += "{:8.5f}, ".format(self.m[x + y * d])
 
         return rv + "])"
+
+def frustum_matrix(l, r, t, b, n, f):
+    return Matrix(4, [
+        2 * n / (r - l), 0, (r + l) / (r - l), 0,
+        0, 2 * n / (t - b), (t + b) / (t - b), 0,
+        0, 0, -(f + n)/(f - n), -(2*f*n)/(f - n),
+        0, 0, -1, 0 ])
+
+from math import radians, tan
+
+def renpy_frustum_matrix(fov, near, far, width, height):
+    tanfov = tan(radians(fov / 2))
+
+    a = -(width / 2.0 / tanfov)
+    print("a", a)
+
+    i = 1.0 - ( near / a )
+    print(i)
+
+
+    # Half the width at the near plane, and half the height of the near plane.
+    hnw = i * width / 2.0
+    hnh = i * height / 2.0
+
+    return frustum_matrix(-hnw, hnw, -hnh, hnh, near, far)
+
+
+renpy_frustum_matrix(45, -800, 800, 800, 800)
+

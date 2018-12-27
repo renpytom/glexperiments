@@ -92,6 +92,14 @@ def renpy_frustum_matrix(fov, near, far, width, height):
 
     return frustum_matrix(-hnw, hnw, -hnh, hnh, near, far)
 
+def from_glm(mat):
+    """
+    Converts a glm matrix (mat2, mat3, or mat4) to a Matrix.
+    """
 
-renpy_frustum_matrix(45, -800, 800, 800, 800)
+    data = [ ]
+    for i in mat:
+        data.extend(i)
+
+    return Matrix(len(mat), data)
 

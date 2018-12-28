@@ -86,7 +86,7 @@ cdef class Polygon:
         cdef int i, x, y
         cdef float *p = self.data + offset
         cdef float *m = matrix.m
-        cdef int d = matrix.dimensions
+        cdef int d = matrix.dimension
 
         cdef float py
 
@@ -102,7 +102,6 @@ cdef class Polygon:
 
             for 0 <= y < size:
                 vec[y] = p[y]
-
 
             for 0 <= y < size:
                 py = 0

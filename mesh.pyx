@@ -183,5 +183,7 @@ cdef class Mesh:
 
         return rv
 
-
+    def print_points(Mesh self, prefix):
+        for i, p in enumerate(self.polygons):
+            p.print_points(prefix + " " + str(i))
 

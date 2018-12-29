@@ -7,9 +7,11 @@ import_pygame_sdl2()
 from array import array
 from shaders import Program
 from mesh import Mesh
-from matrix import Matrix, frustum_matrix
+from matrix import Matrix, renpy_matrix
 
 from uguugl cimport *
+
+import glm
 
 import ftl
 
@@ -128,7 +130,16 @@ class Main(object):
         self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
 
 
-    def draw_mesh(self, mesh, tex):
+        self.unity_mesh = self.logo_mesh.copy()
+
+        self.logo_mesh.offset(0, 0, -1000)
+        self.logo_mesh.print_points("matrix")
+
+        self.transform = renpy_matrix(800, 800, 500, 1000, 2000)
+
+
+
+    def draw_unity_mesh(self, mesh, tex):
 
         transform = Matrix(4, [
             1.0 / 400.0, 0.0, 0.0, -1.0,
@@ -158,18 +169,49 @@ class Main(object):
             uColorMatrix=uColorMatrix,
             )
 
-    def draw_polygon(self, mesh, color):
 
-        transform = Matrix(4, [
-            1.0 / 400.0, 0.0, 0.0, -1.0,
-            0.0, -1.0 / 400.0, 0.0, 1.0,
+    def draw_mesh(self, mesh, tex):
+
+#         transform = Matrix(4, [
+#             1.0 / 400.0, 0.0, 0.0, -1.0,
+#             0.0, -1.0 / 400.0, 0.0, 1.0,
+#             0.0, 0.0, 1.0, 0.0,
+#             0.0, 0.0, 0.0, 1.0,
+#         ])
+
+        uColorMatrix = Matrix(4, [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0,
-        ])
+            ])
+
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
+
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_2D, tex)
+
+
+        self.blit_program.draw(
+            mesh,
+            uTransform=self.transform,
+            uTex0=0,
+            uColorMatrix=uColorMatrix,
+            )
+
+    def draw_polygon(self, mesh, color):
+
+#         transform = Matrix(4, [
+#             1.0 / 400.0, 0.0, 0.0, -1.0,
+#             0.0, -1.0 / 400.0, 0.0, 1.0,
+#             0.0, 0.0, 1.0, 0.0,
+#             0.0, 0.0, 0.0, 1.0,
+#         ])
 
         self.poly_program.draw(
             mesh,
-            uTransform=transform,
+            uTransform=self.transform,
             uColor=color,
             )
 
@@ -211,12 +253,15 @@ class Main(object):
 #         self.draw_polygon(self.logo_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
 #         self.draw_mesh(self.logo_mesh, self.logo_tex)
 
-        self.draw_polygon(self.offset_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
-        self.draw_polygon(self.triangle_mesh, [ 0.0, 0.5, 0.0, 1.0 ])
+#         self.draw_polygon(self.offset_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
+#         self.draw_polygon(self.triangle_mesh, [ 0.0, 0.5, 0.0, 1.0 ])
+#
+#         self.draw_polygon(self.combined_mesh, [ 0.5, 0.5, 0.0, 1.0 ])
 
-        self.draw_polygon(self.combined_mesh, [ 0.5, 0.5, 0.0, 1.0 ])
+#        self.draw_polygon(self.square, [ 0.0, 0.0, 0.5, 1.0 ])
 
-        self.draw_mesh(self.combined_mesh, self.logo_tex)
+        self.draw_mesh(self.logo_mesh, self.logo_tex)
+        self.draw_unity_mesh(self.unity_mesh, self.logo_tex)
 
 main = Main()
 init = main.init

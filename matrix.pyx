@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 cdef class Matrix:
     """
     Represents a `dimension` x `dimension` matrix, where 0 < `dimension` <= 5.
@@ -30,7 +32,7 @@ cdef class Matrix:
 
         cdef int d = self.dimension
 
-        cdef Matrix rv = Matrix(self.dimension)
+        cdef Matrix rv = Matrix(self.dimension, None)
 
         for 0 <= y < self.dimension:
             for 0 <= x < self.dimension:
@@ -39,6 +41,20 @@ cdef class Matrix:
 
         return rv
 
+
+    def apply(self, x, y, z=0.0, w=1.0):
+        """
+        Applies this matrix to a vector.
+        """
+
+        cdef float *m = self.m
+
+        return (
+            x * m[0] + y * m[1] + z * m[2] + w * m[3],
+            x * m[4] + y * m[5] + z * m[6] + w * m[7],
+            x * m[8] + y * m[9] + z * m[10] + w * m[11],
+            x * m[12] + y * m[13] + z * m[14] + w * m[15],
+            )
 
     def __getitem__(Matrix self, int index):
         if (index < 0) or (index >= self.dimension * self.dimension):
@@ -67,30 +83,37 @@ cdef class Matrix:
 
         return rv + "])"
 
-def frustum_matrix(l, r, t, b, n, f):
+
+
+
+def renpy_matrix(w, h, n, p, f):
+    """
+    `w`, `h`
+        The width and height of the input plane, in pixels.
+
+    `n`
+        The distance of the near plane from the camera.
+
+    `p`
+        The distance of the 1:1 plane from the camera. This is where 1 pixel
+        is one coordinate unit.
+
+    `f`
+        The distance of the far plane from the camera.
+    """
+
+    w *= 1.0
+    h *= 1.0
+    n *= 1.0
+    p *= 1.0
+    f *= 1.0
+
     return Matrix(4, [
-        2 * n / (r - l), 0, (r + l) / (r - l), 0,
-        0, 2 * n / (t - b), (t + b) / (t - b), 0,
-        0, 0, -(f + n)/(f - n), -(2*f*n)/(f - n),
-        0, 0, -1, 0 ])
-
-from math import radians, tan
-
-def renpy_frustum_matrix(fov, near, far, width, height):
-    tanfov = tan(radians(fov / 2))
-
-    a = -(width / 2.0 / tanfov)
-    print("a", a)
-
-    i = 1.0 - ( near / a )
-    print(i)
-
-
-    # Half the width at the near plane, and half the height of the near plane.
-    hnw = i * width / 2.0
-    hnh = i * height / 2.0
-
-    return frustum_matrix(-hnw, hnw, -hnh, hnh, near, far)
+        2 * p / w, 0, 0, 0,
+        0, -2 * p / h, 0, -1,
+        0, 0, -(f+n)/(f-n), -2 * f * n / (f - n),
+        0, 0, -1.0, 0,
+        ])
 
 def from_glm(mat):
     """
@@ -102,4 +125,30 @@ def from_glm(mat):
         data.extend(i)
 
     return Matrix(len(mat), data)
+#
+# # n = 500.0
+# # f = 10000.0
+# #
+# # m = Matrix(4, [
+# #     0, 0, 0, 0,
+# #     0, 0, 0, 0,
+# #     0, 0, -(f+n)/(f-n), (-2) * f * n / (f - n),
+# #     0, 0, -1, 0,
+# #     ])
 
+# m = renpy_matrix(800, 800, 500, 1000, 10000)
+# print(m)
+#
+# def test(xa, ya, za, wa=1.0):
+#     x, y, z, w = m.apply(xa, ya, za, 1.0)
+#
+#     print("XXX", w)
+#     print((xa, ya, za, wa), "* m =", (x, y, z, w), " -> ", (x/w, y/w, z/w, w/w))
+#
+# for i in range(100, 2100, 100):
+#     # test(-400, -400, -1.0 * i)
+#     test(400, 400, -1.0 * i)
+#
+#
+# import sys
+# sys.exit(0)

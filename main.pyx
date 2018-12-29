@@ -130,23 +130,33 @@ class Main(object):
         self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
 
 
-        self.unity_mesh = self.logo_mesh.copy()
-
-        self.logo_mesh.offset(0, 0, -1000)
-        self.logo_mesh.print_points("matrix")
-
         self.transform = renpy_matrix(800, 800, 500, 1000, 2000)
 
-
-
-    def draw_unity_mesh(self, mesh, tex):
-
-        transform = Matrix(4, [
+        self.unity_transform = Matrix(4, [
             1.0 / 400.0, 0.0, 0.0, -1.0,
             0.0, -1.0 / 400.0, 0.0, 1.0,
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0,
         ])
+
+        print("Transform:", self.transform)
+        print("Unity:", self.unity_transform)
+
+        def a(m, x, y, z):
+            x, y, z, w = m.apply(x, y, z)
+            print(x/w, y/w, z/w, w/w)
+
+#             mesh = self.logo_mesh.copy()
+#             mesh.multiply_matrix("aPosition", 4, m)
+#             mesh.print_points("points")
+#
+#             print()
+#
+#         a(self.transform, 1000, 0, 0)
+#         a(self.unity_transform, 1000, 0, 0)
+
+
+    def draw_unity_mesh(self, mesh, tex):
 
         uColorMatrix = Matrix(4, [
             1.0, 0.0, 0.0, 0.0,
@@ -164,7 +174,7 @@ class Main(object):
 
         self.blit_program.draw(
             mesh,
-            uTransform=transform,
+            uTransform=self.unity_transform,
             uTex0=0,
             uColorMatrix=uColorMatrix,
             )
@@ -243,6 +253,8 @@ class Main(object):
 
         p.draw(m)
 
+    toggle = False
+    count = 0
 
     def draw(self):
         glClearColor(0.7, 0.8, 0.8, 1.0)
@@ -260,8 +272,29 @@ class Main(object):
 
 #        self.draw_polygon(self.square, [ 0.0, 0.0, 0.5, 1.0 ])
 
-        self.draw_mesh(self.logo_mesh, self.logo_tex)
-        self.draw_unity_mesh(self.unity_mesh, self.logo_tex)
+        self.toggle = not self.toggle
+
+        mesh = self.logo_mesh.copy()
+
+        if self.toggle:
+            self.draw_mesh(mesh, self.logo_tex)
+            matrix = self.transform
+            name = "draw"
+        else:
+            self.draw_unity_mesh(mesh, self.logo_tex)
+            matrix = self.unity_transform
+            name = "ward"
+
+        if self.count < 2:
+            mesh.multiply_matrix("aPosition", 4, matrix)
+            mesh.perspective_divide()
+            mesh.print_points(name)
+
+        self.count += 1
+
+        return self.count
+
+
 
 main = Main()
 init = main.init

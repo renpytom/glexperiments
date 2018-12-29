@@ -36,7 +36,8 @@ cdef class Matrix:
 
         for 0 <= y < self.dimension:
             for 0 <= x < self.dimension:
-                for 0 <= i  < self.dimension:
+                rv.m[x + y * d] = 0.0
+                for 0 <= i < self.dimension:
                     rv.m[x + y * d] += a[x + i * d] * b[i + y * d]
 
         return rv
@@ -83,6 +84,19 @@ cdef class Matrix:
 
         return rv + "])"
 
+def identity_matrix(int dimension):
+    cdef Matrix rv = Matrix(dimension, None)
+
+    cdef int i
+
+    for 0 <= i < (dimension * dimension):
+        rv.m[i] = 0.0
+
+    for 0 <= i < dimension:
+        rv.m[i * dimension + i ] = 1.0
+
+    return rv
+
 
 
 
@@ -108,12 +122,30 @@ def renpy_matrix(w, h, n, p, f):
     p *= 1.0
     f *= 1.0
 
-    return Matrix(4, [
-        2 * p / w, 0, 0, 0,
-        0, -2 * p / h, 0, -1,
+
+    offset = Matrix(4, [
+        1.0, 0.0, 0.0, -w / 2.0,
+        0.0, 1.0, 0.0, -h / 2.0,
+        0.0, 0.0, 1.0, -p,
+        0.0, 0.0, 0.0, 1.0,
+        ])
+
+    project = Matrix(4, [
+        2.0 * p / w, 0, 0, 0,
+        0, 2.0 * p / h, 0, 0.0,
         0, 0, -(f+n)/(f-n), -2 * f * n / (f - n),
         0, 0, -1.0, 0,
         ])
+
+    inverty = Matrix(4, [
+        1, 0, 0, 0,
+        0, -1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+        ])
+
+    return offset * project * inverty
+
 
 def from_glm(mat):
     """

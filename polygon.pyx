@@ -73,6 +73,19 @@ cdef class Polygon:
 
             p += self.stride
 
+    def perspective_divide(Polygon self):
+
+        cdef float *p = self.data
+        cdef int i
+
+
+        for 0 <= i < self.points:
+            p[X] /= p[W]
+            p[Y] /= p[W]
+            p[Z] /= p[W]
+
+            p += self.stride
+
     cpdef void multiply_matrix(Polygon self, int offset, int size, Matrix matrix):
         """
         Multiplies the location of the vertex by `matrix`, which can be 2, 3, or 4

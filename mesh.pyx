@@ -101,6 +101,11 @@ cdef class Mesh:
         for p in self.polygons:
             p.offset(x, y, z)
 
+    def perspective_divide(Mesh self):
+
+        for p in self.polygons:
+            p.perspective_divide()
+
     def multiply_matrix(Mesh self, attribute, int attribute_size, Matrix matrix):
         """
         Multiplies vertex data by a matrix.

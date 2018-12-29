@@ -132,7 +132,7 @@ class Main(object):
         self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
 
 
-        self.transform = renpy_matrix(800, 800, 500, 1000, 2000)
+        self.transform = renpy_matrix(800, 800, 100, 990, 4000)
 
         self.unity_transform = Matrix(4, [
             1.0 / 400.0, 0.0, 0.0, -1.0,

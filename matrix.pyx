@@ -130,21 +130,15 @@ def renpy_matrix(w, h, n, p, f):
         0.0, 0.0, 0.0, 1.0,
         ])
 
+    # Projection. Note how this inverts y as well.
     project = Matrix(4, [
         2.0 * p / w, 0, 0, 0,
-        0, 2.0 * p / h, 0, 0.0,
+        0, -2.0 * p / h, 0, 0.0,
         0, 0, -(f+n)/(f-n), -2 * f * n / (f - n),
         0, 0, -1.0, 0,
         ])
 
-    inverty = Matrix(4, [
-        1, 0, 0, 0,
-        0, -1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1,
-        ])
-
-    return offset * project * inverty
+    return offset * project
 
 
 def from_glm(mat):

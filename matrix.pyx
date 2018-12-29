@@ -157,30 +157,3 @@ def from_glm(mat):
         data.extend(i)
 
     return Matrix(len(mat), data)
-#
-# # n = 500.0
-# # f = 10000.0
-# #
-# # m = Matrix(4, [
-# #     0, 0, 0, 0,
-# #     0, 0, 0, 0,
-# #     0, 0, -(f+n)/(f-n), (-2) * f * n / (f - n),
-# #     0, 0, -1, 0,
-# #     ])
-
-# m = renpy_matrix(800, 800, 500, 1000, 10000)
-# print(m)
-#
-# def test(xa, ya, za, wa=1.0):
-#     x, y, z, w = m.apply(xa, ya, za, 1.0)
-#
-#     print("XXX", w)
-#     print((xa, ya, za, wa), "* m =", (x, y, z, w), " -> ", (x/w, y/w, z/w, w/w))
-#
-# for i in range(100, 2100, 100):
-#     # test(-400, -400, -1.0 * i)
-#     test(400, 400, -1.0 * i)
-#
-#
-# import sys
-# sys.exit(0)

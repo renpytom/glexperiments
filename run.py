@@ -31,10 +31,10 @@ def main():
 
         pygame_sdl2.display.flip()
 
-        ev = pygame_sdl2.event.wait()
+        for ev in pygame_sdl2.event.get():
 
-        if ev.type == pygame_sdl2.QUIT:
-            break
+            if ev.type == pygame_sdl2.QUIT:
+                return
 
 
 if __name__ == "__main__":

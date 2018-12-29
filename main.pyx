@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import time
+
 from pygame_sdl2 cimport *
 import pygame_sdl2
 import_pygame_sdl2()
@@ -139,22 +141,6 @@ class Main(object):
             0.0, 0.0, 0.0, 1.0,
         ])
 
-        print("Transform:", self.transform)
-        print("Unity:", self.unity_transform)
-
-        def a(m, x, y, z):
-            x, y, z, w = m.apply(x, y, z)
-            print(x/w, y/w, z/w, w/w)
-
-#             mesh = self.logo_mesh.copy()
-#             mesh.multiply_matrix("aPosition", 4, m)
-#             mesh.print_points("points")
-#
-#             print()
-#
-#         a(self.transform, 1000, 0, 0)
-#         a(self.unity_transform, 1000, 0, 0)
-
 
     def draw_unity_mesh(self, mesh, tex):
 
@@ -182,13 +168,6 @@ class Main(object):
 
     def draw_mesh(self, mesh, tex):
 
-#         transform = Matrix(4, [
-#             1.0 / 400.0, 0.0, 0.0, -1.0,
-#             0.0, -1.0 / 400.0, 0.0, 1.0,
-#             0.0, 0.0, 1.0, 0.0,
-#             0.0, 0.0, 0.0, 1.0,
-#         ])
-
         uColorMatrix = Matrix(4, [
             1.0, 0.0, 0.0, 0.0,
             0.0, 1.0, 0.0, 0.0,
@@ -211,13 +190,6 @@ class Main(object):
             )
 
     def draw_polygon(self, mesh, color):
-
-#         transform = Matrix(4, [
-#             1.0 / 400.0, 0.0, 0.0, -1.0,
-#             0.0, -1.0 / 400.0, 0.0, 1.0,
-#             0.0, 0.0, 1.0, 0.0,
-#             0.0, 0.0, 0.0, 1.0,
-#         ])
 
         self.poly_program.draw(
             mesh,
@@ -253,8 +225,7 @@ class Main(object):
 
         p.draw(m)
 
-    toggle = False
-    count = 0
+    start = time.time()
 
     def draw(self):
         glClearColor(0.7, 0.8, 0.8, 1.0)
@@ -262,38 +233,21 @@ class Main(object):
 
         glViewport(0, 0, 800, 800)
 
-#         self.draw_polygon(self.logo_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
-#         self.draw_mesh(self.logo_mesh, self.logo_tex)
-
-#         self.draw_polygon(self.offset_mesh, [ 0.5, 0.0, 0.0, 1.0 ])
-#         self.draw_polygon(self.triangle_mesh, [ 0.0, 0.5, 0.0, 1.0 ])
-#
-#         self.draw_polygon(self.combined_mesh, [ 0.5, 0.5, 0.0, 1.0 ])
-
-#        self.draw_polygon(self.square, [ 0.0, 0.0, 0.5, 1.0 ])
-
-        self.toggle = not self.toggle
-
         mesh = self.logo_mesh.copy()
 
-        if self.toggle:
-            self.draw_mesh(mesh, self.logo_tex)
-            matrix = self.transform
-            name = "draw"
-        else:
-            self.draw_unity_mesh(mesh, self.logo_tex)
-            matrix = self.unity_transform
-            name = "ward"
+        from math import sin, cos, radians
 
-        if self.count < 2:
-            mesh.multiply_matrix("aPosition", 4, matrix)
-            mesh.perspective_divide()
-            mesh.print_points(name)
+        a = time.time() - self.start
 
-        self.count += 1
+        mesh.offset(-116, -180, 0)
+        mesh.multiply_matrix("aPosition", 3, Matrix(
+            3, [ 1, 0, 0,
+                 0, cos(a), -sin(a),
+                 0, sin(a), cos(a),
+                 ]))
+        mesh.offset(400, 400, 0)
 
-        return self.count
-
+        self.draw_mesh(mesh, self.logo_tex)
 
 
 main = Main()

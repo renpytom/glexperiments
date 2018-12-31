@@ -8,6 +8,7 @@ import_pygame_sdl2()
 
 from array import array
 from shaders import Program
+import shadergen
 from mesh import Mesh
 from matrix import Matrix, renpy_projection_matrix
 
@@ -179,8 +180,9 @@ class Main(object):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, tex)
 
+        program = shadergen.get(("renpy.geometry", "renpy.texture"))
 
-        self.blit_program.draw(
+        program.draw(
             mesh,
             uTransform=self.transform,
             uTex0=0,

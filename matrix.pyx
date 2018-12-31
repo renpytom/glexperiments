@@ -1,5 +1,8 @@
 from __future__ import print_function
 
+from libc.string cimport memset
+
+
 cdef class Matrix:
     """
     Represents a `dimension` x `dimension` matrix, where 0 < `dimension` <= 5.
@@ -9,11 +12,14 @@ cdef class Matrix:
 
         self.dimension = dimension
 
+        cdef int limit = dimension * dimension
+
+        memset(self.m, 0, sizeof(float) * limit)
+
         if l is None:
             return
 
         cdef int i = 0
-        cdef int limit = dimension * dimension
 
         for j in l:
             self.m[i] = j
@@ -43,20 +49,6 @@ cdef class Matrix:
         return rv
 
 
-    def apply(self, x, y, z=0.0, w=1.0):
-        """
-        Applies this matrix to a vector.
-        """
-
-        cdef float *m = self.m
-
-        return (
-            x * m[0] + y * m[1] + z * m[2] + w * m[3],
-            x * m[4] + y * m[5] + z * m[6] + w * m[7],
-            x * m[8] + y * m[9] + z * m[10] + w * m[11],
-            x * m[12] + y * m[13] + z * m[14] + w * m[15],
-            )
-
     def __getitem__(Matrix self, int index):
         if (index < 0) or (index >= self.dimension * self.dimension):
             raise IndexError("Matrix index out of range.")
@@ -84,24 +76,44 @@ cdef class Matrix:
 
         return rv + "])"
 
+    def apply(self, x, y, z=0.0, w=1.0):
+        """
+        Applies this matrix to a vertex, and returns the transformed
+        point. (This is more intended for debug usage, as it can be slow
+        for normal use.)
+        """
+
+        cdef float *m = self.m
+
+        return (
+            x * m[0] + y * m[1] + z * m[2] + w * m[3],
+            x * m[4] + y * m[5] + z * m[6] + w * m[7],
+            x * m[8] + y * m[9] + z * m[10] + w * m[11],
+            x * m[12] + y * m[13] + z * m[14] + w * m[15],
+            )
+
+
 def identity_matrix(int dimension):
+    """
+    Returns a `dimension` x `dimension` identity matrix.
+    """
+
     cdef Matrix rv = Matrix(dimension, None)
 
     cdef int i
 
-    for 0 <= i < (dimension * dimension):
-        rv.m[i] = 0.0
-
     for 0 <= i < dimension:
-        rv.m[i * dimension + i ] = 1.0
+        rv.m[i * dimension + i] = 1.0
 
     return rv
 
 
-
-
-def renpy_matrix(w, h, n, p, f):
+def renpy_projection_matrix(w, h, n, p, f):
     """
+    Returns the Ren'Py projection matrix. This is a view into a 3d space
+    where (0, 0) is the top left corner (`w`/2, `h`/2) is the center, and
+    (`w`,`h`) is the bottom right, when the z coordinate is 0.
+
     `w`, `h`
         The width and height of the input plane, in pixels.
 
@@ -122,7 +134,6 @@ def renpy_matrix(w, h, n, p, f):
     p *= 1.0
     f *= 1.0
 
-
     offset = Matrix(4, [
         1.0, 0.0, 0.0, -w / 2.0,
         0.0, 1.0, 0.0, -h / 2.0,
@@ -139,15 +150,3 @@ def renpy_matrix(w, h, n, p, f):
         ])
 
     return offset * project
-
-
-def from_glm(mat):
-    """
-    Converts a glm matrix (mat2, mat3, or mat4) to a Matrix.
-    """
-
-    data = [ ]
-    for i in mat:
-        data.extend(i)
-
-    return Matrix(len(mat), data)

@@ -9,11 +9,9 @@ import_pygame_sdl2()
 from array import array
 from shaders import Program
 from mesh import Mesh
-from matrix import Matrix, renpy_matrix
+from matrix import Matrix, renpy_projection_matrix
 
 from uguugl cimport *
-
-import glm
 
 import ftl
 
@@ -132,7 +130,7 @@ class Main(object):
         self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
 
 
-        self.transform = renpy_matrix(800, 800, 100, 990, 4000)
+        self.transform = renpy_projection_matrix(800, 800, 100, 990, 4000)
 
         self.unity_transform = Matrix(4, [
             1.0 / 400.0, 0.0, 0.0, -1.0,

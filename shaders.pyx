@@ -31,14 +31,8 @@ def uniform_vec4(uniform, data):
     a, b, c, d = data
     glUniform4f(uniform, a, b, c, d)
 
-def uniform_mat2(uniform, Matrix data):
-    glUniformMatrix2fv(uniform, 1, GL_FALSE, data.m)
-
-def uniform_mat3(uniform, Matrix data):
-    glUniformMatrix3fv(uniform, 1, GL_FALSE, data.m)
-
 def uniform_mat4(uniform, Matrix data):
-    glUniformMatrix4fv(uniform, 1, GL_FALSE, data.m)
+    glUniformMatrix4fv(uniform, 1, GL_TRUE, data.m)
 
 def uniform_sampler2d(uniform, data):
     glUniform1i(uniform, data)
@@ -48,8 +42,6 @@ UNIFORM_TYPES = {
     "vec2" : uniform_vec2,
     "vec3" : uniform_vec3,
     "vec4" : uniform_vec4,
-    "mat2" : uniform_mat2,
-    "mat3" : uniform_mat3,
     "mat4" : uniform_mat4,
     "sampler2D" : uniform_sampler2d,
     }

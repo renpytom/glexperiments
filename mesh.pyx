@@ -113,7 +113,7 @@ cdef class Mesh:
         `attribute`
             The offset of the attribute in question.
 
-        `attibute_size`
+        `attribute_size`
             The number of elements in the attribute. If the matrix is larger
             than this, other fields are padded with 1s.
 

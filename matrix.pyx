@@ -153,14 +153,31 @@ def renpy_projection_matrix(float w, float h, float n, float p, float f):
     #            0.0,          0.0, -(f+n)/(f-n), -2 * f * n / (f - n)
     #            0.0,          0.0,         -1.0,                 0.0,
 
-    rv = Matrix(None)
+    offset = Matrix([
+        1.0, 0.0, 0.0, -w / 2.0,
+        0.0, 1.0, 0.0, -h / 2.0,
+        0.0, 0.0, 1.0, -p,
+        0.0, 0.0, 0.0, 1.0,
+        ])
 
-    rv.xdx = 2.0*p/w
-    rv.xdz = 0.5*w
-    rv.ydy = -2.0*p/h
-    rv.ydz = 0.5*h
-    rv.zdz = 1.0*p + 1.0*(-f - n)/(f - n)
-    rv.zdw = -2.0*f*n/(f - n)
-    rv.wdz = -1.00000000000000
+    projection = Matrix([
+        2.0 * p / w,          0.0,          0.0,                 0.0,
+        0.0, -2.0 * p / h,          0.0,                 0.0,
+        0.0,          0.0, -(f+n)/(f-n), -2 * f * n / (f - n),
+        0.0,          0.0,         -1.0,                 0.0,
+    ])
+
+    rv = projection * offset
+
+#     rv = Matrix(None)
+#
+#     rv.xdx = 2.0*p/w
+#     rv.xdz = 0.5*w
+#     rv.ydy = -2.0*p/h
+#     rv.ydz = 0.5*h
+#     rv.zdz = 1.0*p + 1.0*(-f - n)/(f - n)
+#     rv.zdw = -2.0*f*n/(f - n)
+#     rv.wdz = -1.00000000000000
+
 
     return rv

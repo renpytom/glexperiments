@@ -86,45 +86,32 @@ cdef class Polygon:
 
             p += self.stride
 
-    cpdef void multiply_matrix(Polygon self, int offset, int size, Matrix matrix):
+    cpdef void multiply_matrix(Polygon self, int offset, int size, Matrix m):
         """
-        Multiplies the location of the vertex by `matrix`, which can be 2, 3, or 4
-        elements wide. This always updates the 3 elements of the vertex -
-        for a 4-element one, the vector is expected to be [x y z 1].
-
-        `offset`
-            The offset of the attribute to use.
+        Implements multiply_matrix for a single polygon. See Mesh.multiply_matrix
+        for the
         """
 
-        cdef int i, x, y
+        cdef int i
         cdef float *p = self.data + offset
-        cdef float *m = matrix.m
-        cdef int d = matrix.dimension
 
-        cdef float py
+        if size == 4:
 
-        cdef float vec[5]
+            for 0 <= i < self.points:
+                m.transform4(p, p+1, p+2, p+3, p[0], p[1], p[2], p[3])
+                p += self.stride
 
-        vec[0] = 1.0
-        vec[1] = 1.0
-        vec[2] = 1.0
-        vec[3] = 1.0
-        vec[4] = 1.0
+        elif size == 3:
 
-        for 0 <= i < self.points:
+            for 0 <= i < self.points:
+                m.transform3(p, p+1, p+2, p[0], p[1], p[2], 1.0)
+                p += self.stride
 
-            for 0 <= y < size:
-                vec[y] = p[y]
+        elif size == 2:
 
-            for 0 <= y < size:
-                py = 0
-
-                for 0 <= x < d:
-                    py += m[y * d + x] * vec[x]
-
-                p[y] = py
-
-            p += self.stride
+            for 0 <= i < self.points:
+                m.transform2(p, p+1, p[0], p[1], 0.0, 1.0)
+                p += self.stride
 
 
     def print_points(self, prefix):

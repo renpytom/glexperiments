@@ -82,8 +82,7 @@ def matrix_mult():
 
     multiplied = prefixed_matrix("self") * prefixed_matrix("other")
 
-    for name, value in zip(matrix_names, multiplied):
-        print("rv.{} =".format(name), str(value).replace("___", "."))
+    print_matrix(multiplied)
 
 
 def renpy_projection_matrix():
@@ -104,9 +103,9 @@ def renpy_projection_matrix():
         0.0, 0.0, -1.0, 0.0,
     ])
 
-    print_matrix(offset)
-    print_matrix(projection)
-    print_matrix(offset * projection)
+    print_matrix(projection * offset)
 
 
 renpy_projection_matrix()
+
+matrix_mult()

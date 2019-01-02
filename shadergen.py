@@ -188,7 +188,7 @@ ShaderPart("renpy.geometry", variables="""
     uniform mat4 uTransform;
     attribute vec4 aPosition;
 """, vertex_100="""
-    gl_Position = vec4(aPosition.xyz, 1) * uTransform;
+    gl_Position = uTransform * aPosition;
 """)
 
 ShaderPart("renpy.texture", variables="""

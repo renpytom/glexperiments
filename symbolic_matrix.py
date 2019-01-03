@@ -107,5 +107,3 @@ def renpy_projection_matrix():
 
 
 renpy_projection_matrix()
-
-matrix_mult()

@@ -118,6 +118,25 @@ def identity_matrix(int dimension):
 
     return rv
 
+def offset_matrix(float x, float y, float z):
+    """
+    Returns a matrix that offsets the vertex by a fixed amount.
+    """
+
+    cdef Matrix rv = Matrix(None)
+
+    rv.xdx = 1.0
+    rv.ydy = 1.0
+    rv.zdz = 1.0
+    rv.wdw = 1.0
+
+    rv.xdw = x
+    rv.ydw = y
+    rv.zdw = z
+
+    return rv
+
+
 
 def renpy_projection_matrix(float w, float h, float n, float p, float f):
     """

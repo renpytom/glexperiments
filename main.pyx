@@ -10,7 +10,7 @@ from array import array
 from shaders import Program
 import shadergen
 from mesh import Mesh
-from matrix import Matrix, renpy_projection_matrix
+from matrix import Matrix, renpy_projection_matrix, offset_matrix
 
 from uguugl cimport *
 
@@ -66,7 +66,7 @@ class Main(object):
         self.transform = renpy_projection_matrix(800, 800, 100, 990, 4000)
 
 
-    def draw_mesh(self, mesh, tex):
+    def draw_mesh(self, mesh, tex, transform = None):
 
         uColorMatrix = Matrix([
             1.0, 0.0, 0.0, 0.0,
@@ -74,6 +74,11 @@ class Main(object):
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0,
             ])
+
+        if transform:
+            transform = self.transform * transform
+        else:
+            transform = self.transform
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
@@ -85,7 +90,7 @@ class Main(object):
 
         program.draw(
             mesh,
-            uTransform=self.transform,
+            uTransform=transform,
             uTex0=0,
             uColorMatrix=uColorMatrix,
             )
@@ -102,21 +107,9 @@ class Main(object):
 
         from math import sin, cos, radians
 
-        a = time.time() - self.start
+        st = time.time() - self.start
 
-#         mesh.offset(-116, -180, 0)
-#         mesh.multiply_matrix("aPosition", 3, Matrix([
-#             1, 0, 0,
-#             0, cos(a), -sin(a),
-#             0, sin(a), cos(a),
-#             ]))
-
-#         mesh.offset(0, 0, -990)
-        # mesh.multiply_matrix("aPosition",  4, self.transform)
-
-
-        self.draw_mesh(mesh, self.logo_tex)
-#         mesh.print_points("Nyd")
+        self.draw_mesh(mesh, self.logo_tex, offset_matrix(100, 100, -st * 250))
 
 
 main = Main()

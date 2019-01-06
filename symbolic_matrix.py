@@ -76,7 +76,7 @@ def print_matrix(m):
         if value == 0.0:
             continue
 
-        print("rv.{} =".format(name), str(value).replace("___", "."))
+        print("    rv.{} =".format(name), str(value).replace("___", "."))
 
 
 def matrix_mult():
@@ -87,9 +87,103 @@ def matrix_mult():
     print_matrix(multiplied)
 
 
-def renpy_projection_matrix():
+class Generator(object):
 
-    w, h, n, p, f = symbols('w h n p f')
+    def __init__(self, name, docs):
+        self.name = name
+        self.docs = docs
+
+    def parameters(self, params):
+        print()
+        print()
+
+        print("def {}({}):".format(
+            self.name,
+            ", ".join("float " + i for i in params.split())))
+
+        if self.docs:
+            print('    """' + self.docs + '"""')
+
+        print()
+
+        if params.split():
+            return symbols(params)
+
+    def matrix(self, m):
+
+        print("    cdef Matrix rv = Matrix(None)")
+        print()
+
+        for name, value in zip(matrix_names, m):
+            if value == 0.0:
+                continue
+
+            print("    rv.{} =".format(name), str(value).replace("___", "."))
+
+        print()
+        print("    return rv")
+
+
+def generate(func):
+    g = Generator(func.__name__, func.__doc__)
+    func(g)
+    return func
+
+
+@generate
+def identity(g):
+    """
+    Returns an identity matrix.
+    """
+
+    g.parameters("")
+
+    g.matrix(Matrix(4, 4, [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+        ]))
+
+
+@generate
+def offset(g):
+    """
+    Returns a matrix that offsets the vertex by a fixed amount.
+    """
+
+    x, y, z = g.parameters("x y z")
+
+    g.matrix(Matrix(4, 4, [
+        1.0, 0.0, 0.0, x,
+        0.0, 1.0, 0.0, y,
+        0.0, 0.0, 1.0, z,
+        0.0, 0.0, 0.0, 1.0,
+        ]))
+
+
+@generate
+def perspective(g):
+    """
+    Returns the Ren'Py projection matrix. This is a view into a 3d space
+    where (0, 0) is the top left corner (`w`/2, `h`/2) is the center, and
+    (`w`,`h`) is the bottom right, when the z coordinate is 0.
+
+    `w`, `h`
+        The width and height of the input plane, in pixels.
+
+    `n`
+        The distance of the near plane from the camera.
+
+    `p`
+        The distance of the 1:1 plane from the camera. This is where 1 pixel
+        is one coordinate unit.
+
+    `f`
+        The distance of the far plane from the camera.
+    """
+
+    w, h, n, p, f = g.parameters('w h n p f')
 
     offset = Matrix(4, 4, [
         1.0, 0.0, 0.0, -w / 2.0,
@@ -100,20 +194,28 @@ def renpy_projection_matrix():
 
     projection = Matrix(4, 4, [
         2.0 * p / w, 0.0, 0.0, 0.0,
-        0.0, -2.0 * p / h, 0.0, 0.0,
+        0.0, 2.0 * p / h, 0.0, 0.0,
         0.0, 0.0, -(f+n)/(f-n), -2 * f * n / (f - n),
         0.0, 0.0, -1.0, 0.0,
     ])
 
-    print_matrix(projection * offset)
+    reverse_offset = Matrix(4, 4, [
+        1.0, 0.0, 0.0, w / 2.0,
+        0.0, 1.0, 0.0, h / 2.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+    ])
+
+    g.matrix(reverse_offset * projection * offset)
 
 
-def screen_projection_matrix():
+@generate
+def screen_projection(g):
     """
     Generates the matrix that projects the Ren'Py screen to the OpenGL screen.
     """
 
-    w, h = symbols("w h")
+    w, h = g.parameters("w h")
 
     m = Matrix(4, 4, [
         2.0 / w, 0.0, 0.0, -1.0,
@@ -122,12 +224,4 @@ def screen_projection_matrix():
         0.0, 0.0, 0.0, 1.0
         ])
 
-    print_matrix(m)
-
-
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("call")
-    args = ap.parse_args()
-
-    globals()[args.call]()
+    g.matrix(m)

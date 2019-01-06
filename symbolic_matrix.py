@@ -1,8 +1,6 @@
 from __future__ import print_function
 from sympy import symbols, Matrix
 
-import argparse
-
 
 def generate_rotations():
 
@@ -86,48 +84,65 @@ def matrix_mult():
 
     print_matrix(multiplied)
 
+###############################################################################
+
+
+import cStringIO
+
+generators = [ ]
+
 
 class Generator(object):
 
     def __init__(self, name, docs):
+        self.f = cStringIO.StringIO()
+
         self.name = name
         self.docs = docs
 
+        generators.append(self)
+
     def parameters(self, params):
-        print()
-        print()
+        print(file=self.f)
+        print(file=self.f)
 
         print("def {}({}):".format(
             self.name,
-            ", ".join("float " + i for i in params.split())))
+            ", ".join("float " + i for i in params.split())), file=self.f)
 
         if self.docs:
-            print('    """' + self.docs + '"""')
+            print('    """' + self.docs + '"""', file=self.f)
 
-        print()
+        print(file=self.f)
 
         if params.split():
             return symbols(params)
 
     def matrix(self, m):
 
-        print("    cdef Matrix rv = Matrix(None)")
-        print()
+        print("    cdef Matrix rv = Matrix(None)", file=self.f)
+        print(file=self.f)
 
         for name, value in zip(matrix_names, m):
             if value == 0.0:
                 continue
 
-            print("    rv.{} =".format(name), str(value).replace("___", "."))
+            print("    rv.{} =".format(name), str(value).replace("___", "."), file=self.f)
 
-        print()
-        print("    return rv")
+        print(file=self.f)
+        print("    return rv", file=self.f)
 
 
 def generate(func):
     g = Generator(func.__name__, func.__doc__)
     func(g)
     return func
+
+
+def write(fn):
+    with open(fn, "w") as f:
+        for i in generators:
+            f.write(i.f.getvalue())
 
 
 @generate

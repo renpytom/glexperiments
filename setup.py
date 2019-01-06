@@ -2,6 +2,7 @@ from distutils.core import setup, Extension
 from Cython.Build import cythonize
 import os
 import sys
+import symbolic_matrix
 
 if "VIRTUAL_ENV" in os.environ:
     venv = os.environ["VIRTUAL_ENV"]
@@ -9,6 +10,8 @@ else:
     venv = "/usr"
 
 print(venv)
+
+symbolic_matrix.write("matrix_functions.pxi")
 
 
 def extension(name):

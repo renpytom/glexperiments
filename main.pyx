@@ -10,7 +10,7 @@ from array import array
 from shaders import Program
 import shadergen
 from mesh import Mesh
-from matrix import Matrix, renpy_projection_matrix, offset_matrix
+from matrix import Matrix
 import matrix
 
 from uguugl cimport *
@@ -102,7 +102,10 @@ class Main(object):
 
         st = time.time() - self.start
 
-        self.draw_mesh(mesh, self.logo_tex, matrix.screen_projection(800, 800))
+        m = matrix.screen_projection(800, 800)
+        # m = m * matrix.perspective(800, 800, 100, 990, 5000)
+
+        self.draw_mesh(mesh, self.logo_tex, m)
 
 
 main = Main()

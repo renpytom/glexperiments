@@ -11,6 +11,7 @@ from shaders import Program
 import shadergen
 from mesh import Mesh
 from matrix import Matrix, renpy_projection_matrix, offset_matrix
+import matrix
 
 from uguugl cimport *
 
@@ -63,10 +64,7 @@ class Main(object):
 
         self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
 
-        self.transform = renpy_projection_matrix(800, 800, 100, 990, 4000)
-
-
-    def draw_mesh(self, mesh, tex, transform = None):
+    def draw_mesh(self, mesh, tex, transform):
 
         uColorMatrix = Matrix([
             1.0, 0.0, 0.0, 0.0,
@@ -74,11 +72,6 @@ class Main(object):
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0,
             ])
-
-        if transform:
-            transform = self.transform * transform
-        else:
-            transform = self.transform
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)
@@ -109,7 +102,7 @@ class Main(object):
 
         st = time.time() - self.start
 
-        self.draw_mesh(mesh, self.logo_tex, offset_matrix(100, 100, -st * 250))
+        self.draw_mesh(mesh, self.logo_tex, matrix.screen_projection(800, 800))
 
 
 main = Main()

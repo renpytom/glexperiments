@@ -136,6 +136,24 @@ def offset_matrix(float x, float y, float z):
 
     return rv
 
+def screen_projection(float w, float h):
+    """
+    Returns a matrix that projects the Ren'Py screen (0, 0) in the upper-left
+    and (h, w) in the lower-right to the OpenGL clipping space, which has
+    (-1, 1) in the upper-left and (1, -1) in the lower right.
+    """
+
+    cdef Matrix rv = Matrix(None)
+
+    rv.xdx = 2.0/w
+    rv.xdw = -1.00000000000000
+    rv.ydy = -2.0/h
+    rv.ydw = 1.00000000000000
+    rv.zdz = 1.00000000000000
+    rv.wdw = 1.00000000000000
+
+    return rv
+
 
 
 def renpy_projection_matrix(float w, float h, float n, float p, float f):

@@ -1,6 +1,8 @@
 from __future__ import print_function
 from sympy import symbols, Matrix
 
+import argparse
+
 
 def generate_rotations():
 
@@ -106,4 +108,26 @@ def renpy_projection_matrix():
     print_matrix(projection * offset)
 
 
-renpy_projection_matrix()
+def screen_projection_matrix():
+    """
+    Generates the matrix that projects the Ren'Py screen to the OpenGL screen.
+    """
+
+    w, h = symbols("w h")
+
+    m = Matrix(4, 4, [
+        2.0 / w, 0.0, 0.0, -1.0,
+        0.0, -2.0 / h, 0.0, 1.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+        ])
+
+    print_matrix(m)
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("call")
+    args = ap.parse_args()
+
+    globals()[args.call]()

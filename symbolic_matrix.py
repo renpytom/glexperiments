@@ -215,8 +215,8 @@ def perspective(g):
     ])
 
     reverse_offset = Matrix(4, 4, [
-        1.0, 0.0, 0.0, w / 2.0,
-        0.0, 1.0, 0.0, h / 2.0,
+        w / 2.0, 0.0, 0.0, w / 2.0,
+        0.0, h / 2.0, 0.0, h / 2.0,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
     ])
@@ -227,6 +227,10 @@ def perspective(g):
 @generate
 def screen_projection(g):
     """
+    This generates a matrix that project the Ren'Py space, where (0, 0) is the
+    top left and (`w`, `h`) is the bottom right, into the OpenGL space, where
+    the
+
     Generates the matrix that projects the Ren'Py screen to the OpenGL screen.
     """
 

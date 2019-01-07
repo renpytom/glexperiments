@@ -65,25 +65,6 @@ def prefixed_matrix(prefix):
 
     return Matrix(4, 4, [ symbols(prefix + "___" + i) for i in matrix_names ])
 
-
-def print_matrix(m):
-
-    print()
-
-    for name, value in zip(matrix_names, m):
-        if value == 0.0:
-            continue
-
-        print("    rv.{} =".format(name), str(value).replace("___", "."))
-
-
-def matrix_mult():
-    print()
-
-    multiplied = prefixed_matrix("self") * prefixed_matrix("other")
-
-    print_matrix(multiplied)
-
 ###############################################################################
 
 
@@ -102,6 +83,8 @@ class Generator(object):
 
         generators.append(self)
 
+        self.first_let = True
+
     def parameters(self, params):
         print(file=self.f)
         print(file=self.f)
@@ -113,12 +96,24 @@ class Generator(object):
         if self.docs:
             print('    """' + self.docs + '"""', file=self.f)
 
-        print(file=self.f)
-
         if params.split():
             return symbols(params)
 
+    def let(self, name, value):
+
+        if self.first_let:
+            print(file=self.f)
+            self.first_let = False
+
+        value = simplify(value, rational=True)
+
+        print("    cdef float {} = {}".format(name, str(value)), file=self.f)
+
+        return symbols(name)
+
     def matrix(self, m):
+
+        print(file=self.f)
 
         print("    cdef Matrix rv = Matrix(None)", file=self.f)
         print(file=self.f)
@@ -127,7 +122,7 @@ class Generator(object):
             if value == 0.0:
                 continue
 
-            print("    rv.{} =".format(name), str(value).replace("___", "."), file=self.f)
+            print("    rv.{} =".format(name), simplify(value, rational=True), file=self.f)
 
         print(file=self.f)
         print("    return rv", file=self.f)

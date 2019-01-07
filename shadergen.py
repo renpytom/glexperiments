@@ -173,9 +173,6 @@ def get(partnames):
     vertex = source(vertex_variables, vertex_parts, False)
     fragment = source(fragment_variables, fragment_parts, True)
 
-    print(vertex)
-    print(fragment)
-
     rv = Program(vertex, fragment)
     rv.load()
 

@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from libc.string cimport memset
-
+from libc.math cimport sin, cos, M_PI as pi
 
 cdef class Matrix:
     """

@@ -90,7 +90,12 @@ class Main(object):
 
     start = time.time()
 
+    first = True
+
     def draw(self):
+
+        st = time.time() - self.start
+
         glClearColor(0.7, 0.8, 0.8, 1.0)
         glClear(GL_COLOR_BUFFER_BIT)
 
@@ -103,7 +108,22 @@ class Main(object):
         st = time.time() - self.start
 
         m = matrix.screen_projection(800, 800)
-        # m = m * matrix.perspective(800, 800, 100, 990, 5000)
+        # m = m * matrix.identity()
+        m = m * matrix.perspective(800, 800, 100, 990, 5000)
+        m = m * matrix.offset(0, 0, -st * 200)
+
+        def test(x, y):
+            x, y, z, w = m.transform(x, y, 0, components=4)
+            x /= w
+            y /= w
+            z /= w
+            print(x, y, z)
+
+        if self.first:
+            test(0, 0)
+            test(100, 100)
+            self.first = False
+
 
         self.draw_mesh(mesh, self.logo_tex, m)
 

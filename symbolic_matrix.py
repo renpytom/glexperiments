@@ -1,38 +1,5 @@
 from __future__ import print_function
-from sympy import symbols, Matrix
-
-
-def generate_rotations():
-
-    sinx, cosx = symbols('sinx cosx')
-    siny, cosy = symbols('siny cosy')
-    sinz, cosz = symbols('sinz cosz')
-
-    rx = Matrix(4, 4, [
-        1, 0, 0, 0,
-        0, cosx, -sinx, 0,
-        0, sinx, cosx, 0,
-        0, 0, 0, 1 ])
-
-    ry = Matrix(4, 4, [
-        cosy, 0, siny, 0,
-        0, 1, 0, 0,
-        -siny, 0, cosy, 0,
-        0, 0, 0, 1])
-
-    rz = Matrix(4, 4, [
-        cosz, -sinz, 0, 0,
-        sinz, cosz, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1, ])
-
-    rotate = rx * ry * rz
-
-    for i, expr in enumerate(rotate):
-        if expr == 0:
-            continue
-
-        print("rv.m[{}] = {}".format(i, expr))
+from sympy import symbols, Matrix, pi, cos, sin, simplify
 
 
 matrix_names = [
@@ -170,6 +137,48 @@ def offset(g):
         0.0, 0.0, 1.0, z,
         0.0, 0.0, 0.0, 1.0,
         ]))
+
+
+@generate
+def rotate(g):
+    """
+    Returns a matrix that rotates the displayable around the
+    origin.
+
+    `x`, `y`, `x`
+        The amount to rotate around the origin, in degrees.
+    """
+
+    x, y, z = g.parameters("x y z")
+
+    sinx = g.let("sinx", sin(x * pi / 180.0))
+    cosx = g.let("cosx", cos(x * pi / 180.0))
+
+    siny = g.let("siny", sin(y * pi / 180.0))
+    cosy = g.let("cosy", cos(y * pi / 180.0))
+
+    sinz = g.let("sinz", sin(z * pi / 180.0))
+    cosz = g.let("cosz", cos(z * pi / 180.0))
+
+    rx = Matrix(4, 4, [
+        1, 0, 0, 0,
+        0, cosx, -sinx, 0,
+        0, sinx, cosx, 0,
+        0, 0, 0, 1 ])
+
+    ry = Matrix(4, 4, [
+        cosy, 0, siny, 0,
+        0, 1, 0, 0,
+        -siny, 0, cosy, 0,
+        0, 0, 0, 1])
+
+    rz = Matrix(4, 4, [
+        cosz, -sinz, 0, 0,
+        sinz, cosz, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1, ])
+
+    g.matrix(rz * ry * rx)
 
 
 @generate

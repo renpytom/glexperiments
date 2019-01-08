@@ -11,6 +11,9 @@ DEF Y = 1
 DEF Z = 2
 DEF W = 3
 
+DEF TX = 4
+DEF TY = 5
+
 cdef class Polygon:
 
     def __init__(Polygon self, int stride, int points, data):
@@ -73,16 +76,17 @@ cdef class Polygon:
 
             p += self.stride
 
-    def perspective_divide(Polygon self):
+    cpdef void perspective_divide(Polygon self):
 
         cdef float *p = self.data
         cdef int i
 
 
         for 0 <= i < self.points:
-            p[X] /= p[W]
-            p[Y] /= p[W]
-            p[Z] /= p[W]
+            if p[W]:
+                p[X] /= p[W]
+                p[Y] /= p[W]
+                p[Z] /= p[W]
 
             p += self.stride
 
@@ -123,6 +127,56 @@ cdef class Polygon:
             for 0 <= i < self.stride:
                 print(self.data[p * self.stride + i], end=' ')
             print()
+
+
+cpdef Polygon rectangle(float w, float h, float tw, float th):
+    """
+    Generates a rectangular polygon with tecture coordinate. One
+    corner is at (0, 0, 0, 1) with texture coordinates (0, 0), and
+    the other is at (w, h, 0, 1) with texture coordinates (0, 1).
+    """
+
+    cdef Polygon rv = Polygon(6, 4, None)
+
+    rv.points = 4
+
+    cdef float *p = rv.data
+
+    p[X] = 0
+    p[Y] = 0
+    p[Z] = 0
+    p[W] = 1
+    p[TX] = 0
+    p[TY] = 0
+
+    p += 6
+
+    p[X] = w
+    p[Y] = 0
+    p[Z] = 0
+    p[W] = 1
+    p[TX] = tw
+    p[TY] = 0
+
+    p += 6
+
+    p[X] = w
+    p[Y] = h
+    p[Z] = 0
+    p[W] = 1
+    p[TX] = tw
+    p[TY] = th
+
+    p += 6
+
+    p[X] = 0
+    p[Y] = h
+    p[Z] = 0
+    p[W] = 1
+    p[TX] = 0
+    p[TY] = th
+
+    return rv
 
 
 cdef inline float get(Polygon p, int index, int offset):
@@ -349,4 +403,5 @@ cpdef barycentric(Polygon a, Polygon b, int offset):
 
         v0x = v1x
         v0y = v1y
+
 

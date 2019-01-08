@@ -1,7 +1,7 @@
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
 
-from polygon cimport Polygon, intersect, barycentric
+from polygon cimport Polygon, intersect, barycentric, rectangle
 
 
 cdef class Mesh:
@@ -57,6 +57,15 @@ cdef class Mesh:
         self.points += p.points
 
         self.polygons.append(p)
+
+    def add_texture_rectangle(Mesh self, float w, float h):
+        """
+        Returns a polygon corresponding to a texture rectangle.
+        """
+
+        self.points += 4
+        self.polygons.append(rectangle(w, h, 1.0, 1.0))
+
 
     cdef float *get_data(Mesh self, name):
         cdef Polygon p

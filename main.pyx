@@ -25,20 +25,7 @@ def texture_mesh(w, h):
 
     rv = Mesh()
     rv.add_attribute("aTexCoord", 2)
-
-    rv.add_polygon([
-        0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-          w, 0.0, 0.0, 1.0, 1.0, 0.0,
-          w,   h, 0.0, 1.0, 1.0, 1.0,
-        0.0,   h, 0.0, 1.0, 0.0, 1.0,
-        ])
-
-#     rv.add_polygon([
-#         0.0, h/2.0, 0.0, 1.0, 0.0, 0.5,
-#           w, h/2.0, 0.0, 1.0, 1.0, 0.5,
-#           w,   h, 0.0, 1.0, 1.0, 1.0,
-#         0.0,   h, 0.0, 1.0, 0.0, 1,0,
-#         ])
+    rv.add_texture_rectangle(w, h)
 
     return rv
 

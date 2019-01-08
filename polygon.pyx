@@ -377,7 +377,7 @@ cpdef barycentric(Polygon a, Polygon b, int offset):
                 v = (d11 * d20 - d01 * d21) / denom
                 w = (d00 * d21 - d01 * d20) / denom
 
-                if not (0.0 <= v <= 1.0) and (0.0 <= w <= 1.0):
+                if not ((0.0 <= v <= 1.0) and (0.0 <= w <= 1.0)):
                     continue
 
                 u = 1.0 - v - w
@@ -405,3 +405,33 @@ cpdef barycentric(Polygon a, Polygon b, int offset):
         v0y = v1y
 
 
+def barycentric_point(Polygon a, float x, float y):
+    """
+    This expects Polygon a to be a polgyon with a stride of 6, with a
+    position (x, y, z, 1) and a pair of attributes (tx, ty) at each
+    point.
+
+    Given `x` and `y`, this barycentricly interpolates the `x` and `y`
+    at the point, if it's inside the Polygon. It returns None, None
+    if the point is inside the polygon.
+
+    This is mostly intended to be used to interpolate screen-space
+    coordinates onto a Render's internal coordinate space.
+    """
+
+
+    cdef Polygon b = Polygon(6, 1, None)
+    b.points = 1
+
+    cdef float *p = b.data
+    p[X] = x
+    p[Y] = y
+    p[Z] = 0.0
+    p[W] = 0.0
+
+    barycentric(a, b, 0)
+
+    if p[W] == 0:
+        return None, None
+
+    return (p[TX], p[TY])

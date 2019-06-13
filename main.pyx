@@ -54,9 +54,9 @@ class Main(object):
     def draw_mesh(self, mesh, tex, transform):
 
         uColorMatrix = Matrix([
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
+            .333, .333, .333, 0.0,
+            .333, .333, .333, 0.0,
+            .333, .333, .333, 0.0,
             0.0, 0.0, 0.0, 1.0,
             ])
 
@@ -66,7 +66,7 @@ class Main(object):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, tex)
 
-        program = shadergen.get(("renpy.geometry", "renpy.texture"))
+        program = shadergen.get(("renpy.geometry", "renpy.texture", "renpy.colormatrix"))
 
         program.draw(
             mesh,

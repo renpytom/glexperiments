@@ -99,19 +99,6 @@ class Main(object):
         m = m * matrix.perspective(800, 800, 100, 990, 5000)
         m = m * matrix.offset(0, 0, -st * 200)
 
-        def test(x, y):
-            x, y, z, w = m.transform(x, y, 0, components=4)
-            x /= w
-            y /= w
-            z /= w
-            print(x, y, z)
-
-        if self.first:
-            test(0, 0)
-            test(100, 100)
-            self.first = False
-
-
         self.draw_mesh(mesh, self.logo_tex, m)
 
 

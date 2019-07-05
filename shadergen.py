@@ -102,6 +102,13 @@ cache = { }
 
 
 def source(variables, parts, fragment):
+    """
+    Given lists of variables and parts, converts them into textual source
+    code for a shader.
+
+    `fragment`
+        Should be set to true to generate the code for a fragment shader.
+    """
 
     rv = [ ]
 
@@ -128,57 +135,90 @@ precision highp float;
     return "".join(rv)
 
 
-def get(partnames):
+class ShaderCache(object):
     """
-    Gets a shader, creating it if necessary.
-
-    `parts`
-        A tuple of strings, giving the names of the shader parts to include in
-        the cache.
+    This class caches shaders that were compiled. It's also responsible for
+    recording shaders that have been used, persisting them to disk, and then
+    loading the shaders back into the cache.
     """
 
-    rv = cache.get(partnames, None)
-    if rv is not None:
+    def __init__(self, filename):
+
+        # The filename that we'll load the list of shaders from, and
+        # persist it to.
+        self.filename = filename
+
+        # A map from tuples of partnames to the shaders that have been
+        # created.
+        self.cache = { }
+
+        # A set of tuples of partnames corresponding to shaders that existed
+        # in the past, but do not exist now.
+        self.missing = set()
+
+    def get(self, partnames):
+        """
+        Gets a shader, creating it if necessary.
+
+        `partnames`
+            A tuple of strings, giving the names of the shader parts to include in
+            the cache.
+        """
+
+        rv = self.cache.get(partnames, None)
+        if rv is not None:
+            return rv
+
+        sortedpartnames = tuple(sorted(set(partnames)))
+
+        rv = self.cache.get(sortedpartnames, None)
+        if rv is not None:
+            self.cache[partnames] = rv
+            return rv
+
+        # If the cache missed entirely, we have to generate the source code for the
+        # shaders.
+
+        vertex_variables = set()
+        vertex_parts = [ ]
+
+        fragment_variables = set()
+        fragment_parts = [ ]
+
+        for i in sortedpartnames:
+
+            p = shader_part.get(i, None)
+
+            if p is None:
+                raise Exception("{!r} is not a known shader part.".format(i))
+
+            vertex_variables |= p.vertex_variables
+            vertex_parts.extend(p.vertex_parts)
+
+            fragment_variables |= p.fragment_variables
+            fragment_parts.extend(p.fragment_parts)
+
+        vertex = source(vertex_variables, vertex_parts, False)
+        fragment = source(fragment_variables, fragment_parts, True)
+
+        rv = Program(vertex, fragment)
+        rv.load()
+
+        self.cache[partnames] = rv
+        self.cache[sortedpartnames] = rv
         return rv
 
-    sortedpartnames = tuple(sorted(set(partnames)))
+    def check(self, partnames):
+        """
+        Returns true if every part in partnames is a known part, or False
+        otherwise.
+        """
 
-    rv = cache.get(sortedpartnames, None)
-    if rv is not None:
-        cache[partnames] = rv
-        return rv
+        for i in partnames:
+            if i not in shader_part:
+                return False
 
-    # If the cache missed entirely, we have to generate the source code for the
-    # shaders.
-
-    vertex_variables = set()
-    vertex_parts = [ ]
-
-    fragment_variables = set()
-    fragment_parts = [ ]
-
-    for i in sortedpartnames:
-
-        p = shader_part.get(i, None)
-
-        if p is None:
-            raise Exception("{!r} is not a known shader part.".format(i))
-
-        vertex_variables |= p.vertex_variables
-        vertex_parts.extend(p.vertex_parts)
-
-        fragment_variables |= p.fragment_variables
-        fragment_parts.extend(p.fragment_parts)
-
-    vertex = source(vertex_variables, vertex_parts, False)
-    fragment = source(fragment_variables, fragment_parts, True)
-
-    rv = Program(vertex, fragment)
-    rv.load()
-
-    cache[partnames] = rv
-    cache[sortedpartnames] = rv
-    return rv
+        return True
 
 
 ShaderPart("renpy.geometry", variables="""

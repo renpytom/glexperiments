@@ -29,6 +29,9 @@ def texture_mesh(w, h):
 
     return rv
 
+
+shader_cache = shadergen.ShaderCache("/tmp/shadercache.txt")
+
 class Main(object):
 
     def init(self):
@@ -66,7 +69,7 @@ class Main(object):
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, tex)
 
-        program = shadergen.get(("renpy.geometry", "renpy.texture", "renpy.colormatrix"))
+        program = shader_cache.get(("renpy.geometry", "renpy.texture", "renpy.colormatrix"))
 
         program.draw(
             mesh,

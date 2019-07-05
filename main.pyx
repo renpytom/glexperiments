@@ -54,6 +54,8 @@ class Main(object):
 
         self.combined_mesh = self.offset_mesh.intersect(self.triangle_mesh)
 
+        shader_cache.load()
+
     def draw_mesh(self, mesh, tex, transform):
 
         uColorMatrix = Matrix([

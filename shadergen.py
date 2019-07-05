@@ -1,4 +1,6 @@
 import re
+import io
+import os
 
 from shaders import Program
 
@@ -33,6 +35,9 @@ class ShaderPart(object):
     """
 
     def __init__(self, name, variables="", **kwargs):
+
+        if not re.match(r'^[\w\.]+$', name):
+            raise Exception("The shader name {!r} contains an invalid character. Shader names are limited to ASCII alphanumeric characters, _, and .".format(name))
 
         self.name = name
         shader_part[name] = self
@@ -219,6 +224,64 @@ class ShaderCache(object):
                 return False
 
         return True
+
+    def save(self):
+        """
+        Saves the list of shaders to the file.
+        """
+
+        try:
+
+            tmp = self.filename + ".tmp"
+
+            with io.open(tmp, "w", encoding="utf-8") as f:
+                shaders = set(self.cache.keys()) | self.missing
+
+                for i in shaders:
+                    f.write(u" ".join(i) + "\r\n")
+
+            try:
+                os.unlink(self.filename)
+            except:
+                pass
+
+            os.rename(tmp, self.filename)
+
+        except:
+            # TODO: Log exception.
+            raise
+
+    def load(self):
+        """
+        Loads the list of shaders from the file, and compiles all shaders
+        for which the parts exist, and for which compilation can succeed.
+        """
+
+        try:
+            f = io.open(self.filename, "r", encoding="utf-8")
+        except:
+            # TODO: Log exception.
+            return
+
+        for l in f:
+            l = l.strip()
+            partnames = tuple(l.strip().split())
+
+            if not partnames:
+                continue
+
+            if not self.check(partnames):
+                self.missing.add(partnames)
+                continue
+
+            try:
+                self.get(partnames)
+            except:
+                # TODO: Log exception.
+                raise
+                self.missing.add(partnames)
+
+        f.close()
 
 
 ShaderPart("renpy.geometry", variables="""

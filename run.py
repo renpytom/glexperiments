@@ -23,7 +23,7 @@ def main():
     if init is not None:
         init()
 
-    while True:
+    while False:
 
         draw = getattr(m, "draw", None)
         if draw is not None:

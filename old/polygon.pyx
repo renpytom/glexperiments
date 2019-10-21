@@ -60,7 +60,7 @@ cdef class Polygon:
         memcpy(rv.data, self.data, sizeof(float) * self.stride * self.points)
         return rv
 
-    cpdef void offset(Polygon self, float x, float y, float z):
+    cpdef void offset(Polygon self, double x, double y, double z):
         """
         Apply an offset to the position of each vertex
         """
@@ -129,7 +129,7 @@ cdef class Polygon:
             print()
 
 
-cpdef Polygon rectangle(float w, float h, float tw, float th):
+cpdef Polygon rectangle(double w, double h, double tw, double th):
     """
     Generates a rectangular polygon with tecture coordinate. One
     corner is at (0, 0, 0, 1) with texture coordinates (0, 0), and
@@ -405,7 +405,7 @@ cpdef barycentric(Polygon a, Polygon b, int offset):
         v0y = v1y
 
 
-def barycentric_point(Polygon a, float x, float y):
+def barycentric_point(Polygon a, double x, double y):
     """
     This expects Polygon a to be a polgyon with a stride of 6, with a
     position (x, y, z, 1) and a pair of attributes (tx, ty) at each

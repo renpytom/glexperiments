@@ -20,7 +20,6 @@ cdef class AttributeLayout:
     # point.
     cdef int stride
 
-
     def __cinit__(self):
         self.offset = { }
         self.stride = 0
@@ -29,6 +28,9 @@ cdef class AttributeLayout:
         self.offset[name] = self.stride
         self.stride += length
 
+SOLID_LAYOUT = AttributeLayout()
+TEXTURE_LAYOUT = AttributeLayout()
+TEXTURE_LAYOUT.add_attribute("aTexCoord", 2)
 
 cdef class Data:
     """
@@ -90,3 +92,96 @@ cdef class Data:
         free(self.point)
         free(self.attribute)
         free(self.triangle)
+
+cdef class Mesh:
+
+    cdef Data data
+
+
+cpdef Mesh untextured_rectangle_mesh(
+        double pl, double pt, double pr, double pb
+        ):
+
+    cdef Mesh rv = Mesh()
+    cdef Data data = Data(SOLID_LAYOUT, 4, 2)
+
+    data.points = 4
+
+    data.point[0].x = pl
+    data.point[0].y = pb
+    data.point[0].z = 0
+
+    data.point[1].x = pr
+    data.point[1].y = pb
+    data.point[1].z = 0
+
+    data.point[2].x = pr
+    data.point[2].y = pt
+    data.point[2].z = 0
+
+    data.point[3].x = pl
+    data.point[3].y = pt
+    data.point[3].z = 0
+
+    data.triangles = 2
+
+    data.triangle[0] = 0
+    data.triangle[1] = 1
+    data.triangle[2] = 2
+
+    data.triangle[3] = 0
+    data.triangle[4] = 2
+    data.triangle[5] = 3
+
+    return rv
+
+cpdef Mesh texture_rectangle_mesh(
+        double pl, double pt, double pr, double pb,
+        double tl, double tt, double tr, double tb
+        ):
+
+    cdef Mesh rv = Mesh()
+    cdef Data data = Data(TEXTURE_LAYOUT, 4, 2)
+
+    data.points = 4
+
+    data.point[0].x = pl
+    data.point[0].y = pb
+    data.point[0].z = 0
+
+    data.point[1].x = pr
+    data.point[1].y = pb
+    data.point[1].z = 0
+
+    data.point[2].x = pr
+    data.point[2].y = pt
+    data.point[2].z = 0
+
+    data.point[3].x = pl
+    data.point[3].y = pt
+    data.point[3].z = 0
+
+    data.attribute[0] = tl
+    data.attribute[1] = tb
+
+    data.attribute[2] = tr
+    data.attribute[3] = tb
+
+    data.attribute[4] = tr
+    data.attribute[5] = tt
+
+    data.attribute[6] = tl
+    data.attribute[7] = tt
+
+    data.triangles = 2
+
+    data.triangle[0] = 0
+    data.triangle[1] = 1
+    data.triangle[2] = 2
+
+    data.triangle[3] = 0
+    data.triangle[4] = 2
+    data.triangle[5] = 3
+
+    return rv
+

@@ -27,6 +27,7 @@ setup(
     ext_modules=cythonize([
         extension("uguugl"),
         extension("uguu"),
+        extension("mesh"),
         extension("main"),
         ],
         include_path=[ ".." ])

@@ -64,7 +64,7 @@ cdef class Data:
     # points. This is 3 * allocated_triangles in size.
     cdef int *triangle
 
-    def __cinit__(Data self, AttributeLayout layout, int points, int triangles):
+    def __init__(Data self, AttributeLayout layout, int points, int triangles):
         """
         `layout`
             An object that contains information about how non-geometry attributes
@@ -93,16 +93,42 @@ cdef class Data:
         free(self.attribute)
         free(self.triangle)
 
+
 cdef class Mesh:
 
     cdef Data data
+
+    def __repr__(Mesh self):
+
+        cdef Data data = self.data
+        cdef int i
+        cdef int j
+
+        rv = "<Mesh {!r}".format(data.layout.offset)
+
+        for 0 <= i < data.points:
+            rv += "\n    {}: {: >8.3f} {:> 8.3f} {:> 8.3f} | ".format(chr(i + 65), data.point[i].x, data.point[i].y, data.point[i].z)
+            for 0 <= j < data.layout.stride:
+                rv += "{:> 8.3f} ".format(data.attribute[i * data.layout.stride + j])
+
+        rv += "\n    "
+
+        for 0 <= i < data.triangles:
+            rv += "{}-{}-{} ".format(
+                chr(data.triangle[i * 3 + 0] + 65),
+                chr(data.triangle[i * 3 + 1] + 65),
+                chr(data.triangle[i * 3 + 2] + 65),
+                )
+
+        rv += ">"
+
+        return rv
 
 
 cpdef Mesh untextured_rectangle_mesh(
         double pl, double pt, double pr, double pb
         ):
 
-    cdef Mesh rv = Mesh()
     cdef Data data = Data(SOLID_LAYOUT, 4, 2)
 
     data.points = 4
@@ -133,6 +159,9 @@ cpdef Mesh untextured_rectangle_mesh(
     data.triangle[4] = 2
     data.triangle[5] = 3
 
+    cdef Mesh rv = Mesh()
+    rv.data = data
+
     return rv
 
 cpdef Mesh texture_rectangle_mesh(
@@ -140,7 +169,6 @@ cpdef Mesh texture_rectangle_mesh(
         double tl, double tt, double tr, double tb
         ):
 
-    cdef Mesh rv = Mesh()
     cdef Data data = Data(TEXTURE_LAYOUT, 4, 2)
 
     data.points = 4
@@ -183,5 +211,10 @@ cpdef Mesh texture_rectangle_mesh(
     data.triangle[4] = 2
     data.triangle[5] = 3
 
+    cdef Mesh rv = Mesh()
+    rv.data = data
+
     return rv
 
+cdef Mesh tr = texture_rectangle_mesh(0, 0, 100, 100, 0, 0, 1, 1)
+print(repr(tr))

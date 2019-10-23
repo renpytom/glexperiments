@@ -270,6 +270,16 @@ cdef void copy_point(Data old, int op, Data new, int np):
     for 0 <= i < stride:
         new.attribute[np * stride + i] = old.attribute[op * stride + i]
 
+cdef void triangle1(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
+    return
+
+cdef void triangle2(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
+    return
+
+cdef void triangle3(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
+    return
+
+
 
 def crop_data(Data old, double x0, double y0, double x1, double y1):
 
@@ -334,6 +344,46 @@ def crop_data(Data old, double x0, double y0, double x1, double y1):
             ci.point[i].replacement = -1
 
 
+    # Step 3: Triangles.
+
+    # Indexes of the three points that make up a triangle.
+    cdef int p0
+    cdef int p1
+    cdef int p2
+
+    # Are the points inside the triangle?
+    cdef bint p0in
+    cdef bint p1in
+    cdef bint p2in
+
+    for 0 <= i < old.triangles:
+        p0 = old.triangle[3 * i + 0]
+        p1 = old.triangle[3 * i + 0]
+        p2 = old.triangle[3 * i + 0]
+
+        p0in = ci.point[p0].inside
+        p1in = ci.point[p1].inside
+        p2in = ci.point[p2].inside
+
+        if p0in and p1in and p2in:
+            triangle3(old, new, ci, p0, p1, p2)
+
+        elif (not p0in) and (not p1in) and (not p2in):
+            continue
+
+        elif (p0in) and (not p1in) and (not p2in):
+            triangle1(old, new, ci, p0, p1, p2)
+        elif (not p0in) and (p1in) and (not p2in):
+            triangle1(old, new, ci, p1, p2, p0)
+        elif (not p0in) and (not p1in) and (p2in):
+            triangle1(old, new, ci, p2, p0, p1)
+
+        elif p0in and p1in and (not p2in):
+            triangle2(old, new, ci, p0, p1, p2 )
+        elif (not p0in) and p1in and p2in:
+            triangle2(old, new, ci, p1, p2, p0)
+        elif p0in and (not p1in) and p2in:
+            triangle2(old, new, ci, p2, p0, p1)
 
 
 

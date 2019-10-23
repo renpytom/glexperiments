@@ -1,12 +1,15 @@
 from libc.stdlib cimport malloc, free
 
+# Represents a point in three dimensional space.
 cdef struct Point:
-    # Represents a point in three dimensional space.
-
     float x
     float y
     float z
 
+
+
+
+# Information used when cropping.
 
 cdef class AttributeLayout:
     """
@@ -93,56 +96,6 @@ cdef class Data:
         free(self.point)
         free(self.attribute)
         free(self.triangle)
-
-    def crop(Data self, double x0, double y0, double x1, double y1):
-        """
-        Returns mesh data containing the points on the left side of the line that
-        goes through (x0, y0) and (x1, y1).
-        """
-
-        cdef int i
-        cdef bint all_inside
-        cdef bint all_outside
-
-        # This is set to true if the point is inside (to the left of) the
-        # line, and False otherwise.
-        cdef bint *inside = <bint *> malloc(self.points * sizeof(bint))
-
-        # The vector corresponding to the line.
-        cdef double lx = x1 - x0
-        cdef double ly = y1 - y0
-
-        # The vector corresponding to the point.
-        cdef double px
-        cdef double py
-
-        all_outside = True
-        all_inside = True
-
-        for 0 <= i < self.points:
-            px = self.point[i].x - x0
-            py = self.point[i].y - y0
-
-            inside[i] = (lx * px + ly * py) < 0.000001
-
-            if inside[i]:
-                all_outside = False
-            else:
-                all_inside = False
-
-        if all_outside:
-            free(inside)
-            return Data(self.layout, 0, 0)
-
-        if all_inside:
-            free(inside)
-            return self
-
-        cdef Data rv = Data(self.layout, self.points + self.triangles * 2, self.triangles)
-
-
-
-
 
 
 
@@ -268,6 +221,121 @@ cpdef Mesh texture_rectangle_mesh(
     rv.data = data
 
     return rv
+
+################################################################################
+
+
+# Stores the information learned about a point when cropping it.
+cdef struct CropPoint:
+    bint inside
+    int replacement
+
+# This is used to indicate that splitting the line between p1 and
+# p2 has created point p2.
+cdef struct CropSplit:
+    int p1
+    int p2
+    int pnew
+
+# This stores information about the crop operation.
+cdef struct CropInfo:
+
+    double x0
+    double y0
+
+    double x1
+    double y1
+
+    # The index of the line segment split that was just added.
+    int lss_index
+
+    # The last four line segment splits.
+    CropSplit split[4]
+
+    # The information learned about the points when cropping them. This
+    # is actually created to be
+    CropPoint point[0]
+
+
+cdef void copy_point(Data old, int op, Data new, int np):
+    """
+    Copies the point at index `op` in ci.old to index `np` in ci.new.
+    """
+
+    cdef int i
+    cdef int stride = old.layout.stride
+
+    new.geometry[np] = old.geometry[op]
+
+    for 0 <= i < stride:
+        new.attribute[np * stride + i] = old.attribute[op * stride + i]
+
+
+def crop_data(Data old, double x0, double y0, double x1, double y1):
+
+    cdef int i
+    cdef int op, np
+
+    cdef CropInfo *ci = <CropInfo *> malloc(sizeof(CropInfo) + old.points * sizeof(CropPoint))
+
+    ci.x0 = x0
+    ci.y0 = y0
+    ci.x1 = x1
+    ci.y1 = y1
+
+    # Step 1: Determine what points are inside and outside the line.
+
+    cdef bint all_inside
+    cdef bint all_outside
+
+    # The vector corresponding to the line.
+    cdef double lx = x1 - x0
+    cdef double ly = y1 - y0
+
+    # The vector corresponding to the point.
+    cdef double px
+    cdef double py
+
+    all_outside = True
+    all_inside = True
+
+    for 0 <= i < old.points:
+        px = old.point[i].x - x0
+        py = old.point[i].y - y0
+
+        if (lx * px + ly * py) < 0.000001:
+            all_outside = False
+            ci.point[i].inside = True
+        else:
+            all_inside = False
+            ci.point[i].inside = False
+
+    # Step 1a: Short circuit if all points are inside or out, otherwise
+    # allocate a new object.
+
+    if all_outside:
+        free(ci)
+        return Data(old.layout, 0, 0)
+
+    if all_inside:
+        free(ci)
+        return old
+
+    cdef Data new = Data(old.layout, old.points + old.triangles * 2, old.triangles)
+
+    # Step 2: Copy points that are inside.
+
+    for 0 <= i < old.points:
+        if ci.point[i].inside:
+            copy_point(old, i, new, new.points)
+            ci.point[i].replacement = new.points
+            new.points += 1
+        else:
+            ci.point[i].replacement = -1
+
+
+
+
 
 cdef Mesh tr = texture_rectangle_mesh(0, 0, 100, 100, 0, 0, 1, 1)
 print(repr(tr))

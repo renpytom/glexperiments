@@ -7,6 +7,7 @@ cdef struct Point:
     float y
     float z
 
+
 cdef class AttributeLayout:
     """
     This represents the layout of attributes inside a mesh.
@@ -92,6 +93,58 @@ cdef class Data:
         free(self.point)
         free(self.attribute)
         free(self.triangle)
+
+    def crop(Data self, double x0, double y0, double x1, double y1):
+        """
+        Returns mesh data containing the points on the left side of the line that
+        goes through (x0, y0) and (x1, y1).
+        """
+
+        cdef int i
+        cdef bint all_inside
+        cdef bint all_outside
+
+        # This is set to true if the point is inside (to the left of) the
+        # line, and False otherwise.
+        cdef bint *inside = <bint *> malloc(self.points * sizeof(bint))
+
+        # The vector corresponding to the line.
+        cdef double lx = x1 - x0
+        cdef double ly = y1 - y0
+
+        # The vector corresponding to the point.
+        cdef double px
+        cdef double py
+
+        all_outside = True
+        all_inside = True
+
+        for 0 <= i < self.points:
+            px = self.point[i].x - x0
+            py = self.point[i].y - y0
+
+            inside[i] = (lx * px + ly * py) < 0.000001
+
+            if inside[i]:
+                all_outside = False
+            else:
+                all_inside = False
+
+        if all_outside:
+            free(inside)
+            return Data(self.layout, 0, 0)
+
+        if all_inside:
+            free(inside)
+            return self
+
+        cdef Data rv = Data(self.layout, self.points + self.triangles * 2, self.triangles)
+
+
+
+
+
+
 
 
 cdef class Mesh:

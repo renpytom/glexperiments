@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from libc.stdlib cimport malloc, free
 from libc.math cimport hypot
 
@@ -8,10 +10,7 @@ cdef struct Point:
     float z
 
 
-
-
 # Information used when cropping.
-
 cdef class AttributeLayout:
     """
     This represents the layout of attributes inside a mesh.
@@ -133,7 +132,7 @@ cdef class Mesh:
 
 
 cpdef Mesh untextured_rectangle_mesh(
-        double pl, double pt, double pr, double pb
+        double pl, double pb, double pr, double pt
         ):
 
     cdef Data data = Data(SOLID_LAYOUT, 4, 2)
@@ -172,8 +171,8 @@ cpdef Mesh untextured_rectangle_mesh(
     return rv
 
 cpdef Mesh texture_rectangle_mesh(
-        double pl, double pt, double pr, double pb,
-        double tl, double tt, double tr, double tb
+        double pl, double pb, double pr, double pt,
+        double tl, double tb, double tr, double tt
         ):
 
     cdef Data data = Data(TEXTURE_LAYOUT, 4, 2)
@@ -225,18 +224,19 @@ cpdef Mesh texture_rectangle_mesh(
 
 ################################################################################
 
+DEF SPLIT_CACHE_LEN = 4
 
 # Stores the information learned about a point when cropping it.
 cdef struct CropPoint:
     bint inside
     int replacement
 
-# This is used to indicate that splitting the line between p1 and
-# p2 has created point p2.
+# This is used to indicate that splitting the line between p0 and
+# p1 has created point np.
 cdef struct CropSplit:
-    int p1
-    int p2
-    int pnew
+    int p0idx
+    int p1idx
+    int npidx
 
 # This stores information about the crop operation.
 cdef struct CropInfo:
@@ -247,11 +247,11 @@ cdef struct CropInfo:
     double x1
     double y1
 
-    # The index of the line segment split that was just added.
-    int lss_index
+    # The number of splits.
+    int splits
 
     # The last four line segment splits.
-    CropSplit split[4]
+    CropSplit split[SPLIT_CACHE_LEN]
 
     # The information learned about the points when cropping them. This
     # is actually created to be
@@ -266,7 +266,7 @@ cdef void copy_point(Data old, int op, Data new, int np):
     cdef int i
     cdef int stride = old.layout.stride
 
-    new.geometry[np] = old.geometry[op]
+    new.point[np] = old.point[op]
 
     for 0 <= i < stride:
         new.attribute[np * stride + i] = old.attribute[op * stride + i]
@@ -285,10 +285,19 @@ cdef void intersectLines(
     """
 
     cdef float denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
     px[0] = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
     py[0] = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
 
-cdef int create_point(Data old, Data new, CropInfo *ci, int p0idx, int p1idx):
+cdef int split_line(Data old, Data new, CropInfo *ci, int p0idx, int p1idx):
+
+    cdef int i
+
+    for 0 <= i < SPLIT_CACHE_LEN:
+        if (ci.split[i].p0idx == p0idx) and (ci.split[i].p1idx == p1idx):
+            return ci.split[i].npidx
+        elif (ci.split[i].p0idx == p1idx) and (ci.split[i].p1idx == p0idx):
+            return ci.split[i].npidx
 
     cdef Point p0 # old point 0
     cdef Point p1 # old point 1
@@ -309,7 +318,7 @@ cdef int create_point(Data old, Data new, CropInfo *ci, int p0idx, int p1idx):
 
     # Use the distance with z to interpolate attributes.
     cdef float p1dist3d = hypot(p1dist2d, p1.z - p0.z)
-    cdef float npdist3d = hypot(p1dist2d, np.z - p0.z)
+    cdef float npdist3d = hypot(npdist2d, np.z - p0.z)
     cdef float d = npdist3d / p1dist3d
 
     # Allocate a new point.
@@ -318,15 +327,18 @@ cdef int create_point(Data old, Data new, CropInfo *ci, int p0idx, int p1idx):
     new.points += 1
 
     # Interpolate the attributes.
-    cdef int i
     cdef int stride = old.layout.stride
     cdef float a
     cdef float b
 
     for 0 <= i <= stride:
-        a = old.attributes[p0idx * stride + i]
-        b = old.attributes[p1idx * stride + i]
-        new.attributes[npidx * stride + i] = a + d * (b - a)
+        a = old.attribute[p0idx * stride + i]
+        b = old.attribute[p1idx * stride + i]
+        new.attribute[npidx * stride + i] = a + d * (b - a)
+
+    ci.split[ci.splits % SPLIT_CACHE_LEN].p0idx = p0idx
+    ci.split[ci.splits % SPLIT_CACHE_LEN].p1idx = p1idx
+    ci.split[ci.splits % SPLIT_CACHE_LEN].npidx = npidx
 
     return npidx
 
@@ -336,8 +348,8 @@ cdef void triangle1(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
     Processes a triangle where only one point is inside the line.
     """
 
-    cdef int a = create_point(old, new, ci, p0, p1)
-    cdef int b = create_point(old, new, ci, p0, p2)
+    cdef int a = split_line(old, new, ci, p0, p1)
+    cdef int b = split_line(old, new, ci, p0, p2)
 
     cdef int t = new.triangles
 
@@ -353,8 +365,8 @@ cdef void triangle2(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
     Processes a triangle where two points are inside the line.
     """
 
-    cdef int a = create_point(old, new, ci, p1, p2)
-    cdef int b = create_point(old, new, ci, p0, p2)
+    cdef int a = split_line(old, new, ci, p1, p2)
+    cdef int b = split_line(old, new, ci, p0, p2)
 
     cdef int t = new.triangles
 
@@ -370,6 +382,7 @@ cdef void triangle2(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
 
     new.triangles += 2
 
+
 cdef void triangle3(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
     """
     Processes a triangle that's entirely inside the line.
@@ -382,7 +395,6 @@ cdef void triangle3(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
     new.triangle[t * 3 + 2] = ci.point[p2].replacement
 
     new.triangles += 1
-
 
 
 def crop_data(Data old, double x0, double y0, double x1, double y1):
@@ -417,7 +429,7 @@ def crop_data(Data old, double x0, double y0, double x1, double y1):
         px = old.point[i].x - x0
         py = old.point[i].y - y0
 
-        if (lx * px + ly * py) < 0.000001:
+        if (lx * py + ly * px) < 0.000001:
             all_outside = False
             ci.point[i].inside = True
         else:
@@ -435,7 +447,7 @@ def crop_data(Data old, double x0, double y0, double x1, double y1):
         free(ci)
         return old
 
-    cdef Data new = Data(old.layout, old.points + old.triangles * 2, old.triangles)
+    cdef Data new = Data(old.layout, old.points + old.triangles * 2, old.triangles * 2)
 
     # Step 2: Copy points that are inside.
 
@@ -447,6 +459,12 @@ def crop_data(Data old, double x0, double y0, double x1, double y1):
         else:
             ci.point[i].replacement = -1
 
+
+    ci.splits = 0
+
+    for 0 <= i < SPLIT_CACHE_LEN:
+        ci.split[i].p0idx = -1
+        ci.split[i].p1idx = -1
 
     # Step 3: Triangles.
 
@@ -462,8 +480,8 @@ def crop_data(Data old, double x0, double y0, double x1, double y1):
 
     for 0 <= i < old.triangles:
         p0 = old.triangle[3 * i + 0]
-        p1 = old.triangle[3 * i + 0]
-        p2 = old.triangle[3 * i + 0]
+        p1 = old.triangle[3 * i + 1]
+        p2 = old.triangle[3 * i + 2]
 
         p0in = ci.point[p0].inside
         p1in = ci.point[p1].inside
@@ -475,11 +493,11 @@ def crop_data(Data old, double x0, double y0, double x1, double y1):
         elif (not p0in) and (not p1in) and (not p2in):
             continue
 
-        elif (p0in) and (not p1in) and (not p2in):
+        elif p0in and (not p1in) and (not p2in):
             triangle1(old, new, ci, p0, p1, p2)
-        elif (not p0in) and (p1in) and (not p2in):
+        elif (not p0in) and p1in and (not p2in):
             triangle1(old, new, ci, p1, p2, p0)
-        elif (not p0in) and (not p1in) and (p2in):
+        elif (not p0in) and (not p1in) and p2in:
             triangle1(old, new, ci, p2, p0, p1)
 
         elif p0in and p1in and (not p2in):
@@ -489,7 +507,15 @@ def crop_data(Data old, double x0, double y0, double x1, double y1):
         elif p0in and (not p1in) and p2in:
             triangle2(old, new, ci, p2, p0, p1)
 
+    free(ci)
+    return new
+
 
 
 cdef Mesh tr = texture_rectangle_mesh(0, 0, 100, 100, 0, 0, 1, 1)
-print(repr(tr))
+print("Original", repr(tr))
+
+cdef Mesh cropped = Mesh()
+cropped.data = crop_data(tr.data, 50, 0, 50, 100)
+
+print("Cropped", repr(cropped))

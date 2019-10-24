@@ -288,7 +288,7 @@ cdef void intersectLines(
     px[0] = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
     py[0] = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
 
-cdef int create_point(Data old, Data new, CropInfo ci, int p0idx, int p1idx):
+cdef int create_point(Data old, Data new, CropInfo *ci, int p0idx, int p1idx):
 
     cdef Point p0 # old point 0
     cdef Point p1 # old point 1
@@ -330,14 +330,58 @@ cdef int create_point(Data old, Data new, CropInfo ci, int p0idx, int p1idx):
 
     return npidx
 
+
 cdef void triangle1(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
-    return
+    """
+    Processes a triangle where only one point is inside the line.
+    """
+
+    cdef int a = create_point(old, new, ci, p0, p1)
+    cdef int b = create_point(old, new, ci, p0, p2)
+
+    cdef int t = new.triangles
+
+    new.triangle[t * 3 + 0] = ci.point[p0].replacement
+    new.triangle[t * 3 + 1] = a
+    new.triangle[t * 3 + 2] = b
+
+    new.triangles += 1
+
 
 cdef void triangle2(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
-    return
+    """
+    Processes a triangle where two points are inside the line.
+    """
+
+    cdef int a = create_point(old, new, ci, p1, p2)
+    cdef int b = create_point(old, new, ci, p0, p2)
+
+    cdef int t = new.triangles
+
+    new.triangle[t * 3 + 0] = ci.point[p0].replacement
+    new.triangle[t * 3 + 1] = ci.point[p1].replacement
+    new.triangle[t * 3 + 2] = a
+
+    t += 1
+
+    new.triangle[t * 3 + 0] = ci.point[p0].replacement
+    new.triangle[t * 3 + 1] = a
+    new.triangle[t * 3 + 2] = b
+
+    new.triangles += 2
 
 cdef void triangle3(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
-    return
+    """
+    Processes a triangle that's entirely inside the line.
+    """
+
+    cdef int t = new.triangles
+
+    new.triangle[t * 3 + 0] = ci.point[p0].replacement
+    new.triangle[t * 3 + 1] = ci.point[p1].replacement
+    new.triangle[t * 3 + 2] = ci.point[p2].replacement
+
+    new.triangles += 1
 
 
 

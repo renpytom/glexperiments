@@ -1,4 +1,5 @@
 from libc.stdlib cimport malloc, free
+from libc.math cimport hypot
 
 # Represents a point in three dimensional space.
 cdef struct Point:
@@ -269,6 +270,65 @@ cdef void copy_point(Data old, int op, Data new, int np):
 
     for 0 <= i < stride:
         new.attribute[np * stride + i] = old.attribute[op * stride + i]
+
+cdef void intersectLines(
+    float x1, float y1,
+    float x2, float y2,
+    float x3, float y3,
+    float x4, float y4,
+    float *px, float *py,
+    ):
+    """
+    Given a line that goes through (x1, y1) to (x2, y2), and a second line
+    that goes through (x3, y3) and (x4, y4), find the point where the two
+    lines intersect.
+    """
+
+    cdef float denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    px[0] = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
+    py[0] = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
+
+cdef int create_point(Data old, Data new, CropInfo ci, int p0idx, int p1idx):
+
+    cdef Point p0 # old point 0
+    cdef Point p1 # old point 1
+    cdef Point np # new point.
+
+    p0 = old.point[p0idx]
+    p1 = old.point[p1idx]
+
+    # Find the location of the new point.
+    intersectLines(p0.x, p0.y, p1.x, p1.y, ci.x0, ci.y0, ci.x1, ci.y1, &np.x, &np.y)
+
+    # The distance between p0 and p1.
+    cdef float p1dist2d = hypot(p1.x - p0.x, p1.y - p0.y)
+    cdef float npdist2d = hypot(np.x - p0.x, np.y - p0.y)
+
+    # The z coordinate is interpolated.
+    np.z = p0.z + (npdist2d / p1dist2d) * (p1.z - p0.z)
+
+    # Use the distance with z to interpolate attributes.
+    cdef float p1dist3d = hypot(p1dist2d, p1.z - p0.z)
+    cdef float npdist3d = hypot(p1dist2d, np.z - p0.z)
+    cdef float d = npdist3d / p1dist3d
+
+    # Allocate a new point.
+    cdef int npidx = new.points
+    new.point[npidx] = np
+    new.points += 1
+
+    # Interpolate the attributes.
+    cdef int i
+    cdef int stride = old.layout.stride
+    cdef float a
+    cdef float b
+
+    for 0 <= i <= stride:
+        a = old.attributes[p0idx * stride + i]
+        b = old.attributes[p1idx * stride + i]
+        new.attributes[npidx * stride + i] = a + d * (b - a)
+
+    return npidx
 
 cdef void triangle1(Data old, Data new, CropInfo *ci, int p0, int p1, int p2):
     return

@@ -28,6 +28,7 @@ setup(
         extension("uguugl"),
         extension("uguu"),
         extension("mesh"),
+        extension("meshcrop"),
         extension("main"),
         ],
         include_path=[ ".." ])
